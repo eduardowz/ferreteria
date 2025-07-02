@@ -1,0 +1,7 @@
+{
+  "name": "FerreteriaGestor",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
