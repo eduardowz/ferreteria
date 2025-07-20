@@ -1,0 +1,287 @@
+/* Estilos para el header */
+.header-toolbar {
+    --background: linear-gradient(135deg, #ff3a30 0%, #c91c1c 100%);
+    --color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .page-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .title-icon {
+    font-size: 24px;
+    margin-right: 10px;
+  }
+  
+  .back-button {
+    color: white;
+  }
+  
+  /* Estilos para emojis */
+  .emoji-icon {
+    font-size: 20px;
+    margin-right: 8px;
+  }
+  
+  .input-emoji, .select-emoji {
+    font-size: 20px;
+    margin-right: 10px;
+  }
+  
+  .detail-emoji {
+    margin-right: 5px;
+  }
+  
+  .action-emoji {
+    font-size: 20px;
+  }
+  
+  .avatar-emoji {
+    font-size: 24px;
+  }
+  
+  /* Estilos para el contenido */
+  .product-content {
+    --background: #f5f7fa;
+  }
+  
+  /* Botón toggle formulario */
+  .toggle-form-button {
+    --border-radius: 10px;
+    margin-bottom: 20px;
+    --box-shadow: 0 4px 8px rgba(255, 58, 48, 0.2);
+    height: 50px;
+    font-weight: 500;
+  }
+  
+  /* Estilos para el formulario */
+  .form-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+  }
+  
+  .form-header {
+    padding-bottom: 0;
+  }
+  
+  .form-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-content {
+    padding-top: 0;
+  }
+  
+  .form-item {
+    --background: transparent;
+    --border-color: #e0e0e0;
+    --highlight-color-focused: var(--ion-color-danger);
+    margin-bottom: 15px;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    border-radius: 10px;
+  }
+  
+  .input-label, .select-label {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .custom-input {
+    --padding-start: 10px !important;
+  }
+  
+  .custom-select {
+    --padding-start: 10px;
+  }
+  
+  .submit-button {
+    --border-radius: 10px;
+    margin-top: 10px;
+    height: 50px;
+    font-weight: 500;
+    --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .submit-button:disabled {
+    --background: #cccccc;
+    --box-shadow: none;
+  }
+  
+  /* Estilos para la lista de productos */
+  .product-list-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0;
+  }
+  
+  .list-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .product-count {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .product-list {
+    padding: 0;
+  }
+  
+  .product-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --background: white;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+  
+  .product-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .product-avatar {
+    width: 50px;
+    height: 50px;
+    margin: 10px;
+    background: #ffd7d5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  
+  .product-info {
+    margin: 10px 0;
+  }
+  
+  .product-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .product-id {
+    font-size: 0.8rem;
+    color: #666;
+    margin-left: 5px;
+    font-weight: normal;
+  }
+  
+  .product-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 5px 0;
+  }
+  
+  .product-details {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .product-detail {
+    margin: 2px 0;
+    font-size: 0.85rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+  }
+  
+  .action-buttons {
+    display: flex;
+  }
+  
+  .edit-button, .delete-button {
+    --padding-start: 5px;
+    --padding-end: 5px;
+  }
+
+  /* Estilos adicionales para la vista grid */
+  .grid-container {
+    padding: 16px;
+  }
+
+  .grid-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s ease;
+  }
+
+  .grid-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .grid-card-image {
+    height: 200px;
+    object-fit: cover;
+    border-radius: 15px 15px 0 0;
+  }
+
+  .grid-card-content {
+    padding: 16px;
+  }
+
+  .grid-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  .grid-card-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .grid-card-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ion-color-danger);
+    margin-bottom: 16px;
+  }
+
+  .grid-card-button {
+    --border-radius: 10px;
+    height: 44px;
+    font-weight: 500;
+  }
+
+  .grid-admin-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .grid-admin-button {
+    --border-radius: 8px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    height: 36px;
+    font-size: 0.9rem;
+  }

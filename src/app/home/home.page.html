@@ -1,20 +1,93 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
+<ion-header>
+  <ion-toolbar color="warning" class="header-toolbar">
+    <ion-title class="ion-text-center app-title">
+      <span class="title-icon">🔨</span>
+      <span class="title-text">Ferretería X - Manager App</span>
     </ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="logout()" class="logout-button">
+        <span class="logout-emoji">🚪 Salir</span>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+<ion-content class="ion-padding content-background">
+  <div class="hero-section">
+    <div class="icon-container">
+      <span class="main-emoji">🛠️</span>
+    </div>
+    <h2 class="welcome-text">Bienvenido al Panel de Control</h2>
+    <p class="subtitle-text">Gestiona tu ferretería de manera eficiente</p>
   </div>
+
+  <ion-card class="menu-card">
+    <ion-card-header class="card-header">
+      <ion-card-title class="card-title">Menú Principal</ion-card-title>
+      <ion-card-subtitle class="card-subtitle">Elige una opción para comenzar</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content class="card-content">
+      <div class="menu-grid">
+        <div class="menu-option">
+          <div class="option-header">
+            <span class="option-emoji client-emoji">👥</span>
+            <p class="option-description">Administrar y registrar clientes frecuentes</p>
+          </div>
+          <ion-button color="warning" expand="block" routerLink="/clientes" class="option-button">
+            <span class="button-emoji">👥</span>
+            Clientes
+          </ion-button>
+        </div>
+
+        <div class="menu-option">
+          <div class="option-header">
+            <span class="option-emoji product-emoji">📦</span>
+            <p class="option-description">Gestión de productos disponibles en tienda</p>
+          </div>
+          <ion-button color="danger" expand="block" routerLink="/productos" class="option-button">
+            <span class="button-emoji">📦</span>
+            Productos
+          </ion-button>
+        </div>
+
+        <div class="menu-option">
+          <div class="option-header">
+            <span class="option-emoji supplier-emoji">🚚</span>
+            <p class="option-description">Registrar proveedores externos</p>
+          </div>
+          <ion-button color="tertiary" expand="block" routerLink="/proveedores" class="option-button">
+            <span class="button-emoji">🏭</span>
+            Proveedores
+          </ion-button>
+        </div>
+
+        <div class="menu-option">
+          <div class="option-header">
+            <span class="option-emoji order-emoji">📝</span>
+            <p class="option-description">Ver y crear pedidos realizados por clientes</p>
+          </div>
+          <ion-button color="medium" expand="block" routerLink="/pedidos" class="option-button">
+            <span class="button-emoji">📋</span>
+            Pedidos
+          </ion-button>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-button color="dark" expand="block" (click)="logout()" class="logout-button">
+    <span class="button-emoji">🚪</span>
+    Cerrar Sesión
+  </ion-button>
 </ion-content>
+
+<!-- Footer -->
+<ion-footer class="app-footer">
+  <ion-toolbar>
+    <div class="footer-content">
+      <p class="footer-text">© 2025 Ferretería X - Todos los derechos reservados</p>
+      <p class="footer-version">Versión 0.9.0</p>
+    </div>
+  </ion-toolbar>
+</ion-footer>

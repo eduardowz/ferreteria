@@ -1,12 +1,23 @@
 import { Component } from '@angular/core';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/standalone';
+import { RouterModule } from '@angular/router'; // <-- importar RouterModule
+import { IonicModule } from '@ionic/angular';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent],
+  standalone: true,
+  imports: [IonicModule, RouterModule]
 })
 export class HomePage {
-  constructor() {}
+navigateToClientes() {
+throw new Error('Method not implemented.');
+}
+  constructor(private router: Router) {}
+
+  logout() {
+    localStorage.removeItem('isLoggedIn');
+    this.router.navigate(['/login']);
+  }
 }

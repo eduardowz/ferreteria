@@ -1,0 +1,210 @@
+/* Estilos para el header */
+.header-toolbar {
+    --background: linear-gradient(135deg, #5856d6 0%, #3a39a8 100%);
+    --color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .page-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .title-icon {
+    font-size: 24px;
+    margin-right: 10px;
+  }
+  
+  .back-button {
+    color: white;
+  }
+  
+  /* Estilos para emojis */
+  .emoji-icon {
+    font-size: 20px;
+    margin-right: 8px;
+  }
+  
+  .input-emoji {
+    font-size: 20px;
+    margin-right: 10px;
+  }
+  
+  .detail-emoji {
+    margin-right: 5px;
+  }
+  
+  .action-emoji {
+    font-size: 20px;
+  }
+  
+  .avatar-emoji {
+    font-size: 24px;
+  }
+  
+  /* Estilos para el contenido */
+  .supplier-content {
+    --background: #f5f7fa;
+  }
+  
+  /* Botón toggle formulario */
+  .toggle-form-button {
+    --border-radius: 10px;
+    margin-bottom: 20px;
+    --box-shadow: 0 4px 8px rgba(88, 86, 214, 0.2);
+    height: 50px;
+    font-weight: 500;
+  }
+  
+  /* Estilos para el formulario */
+  .form-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+  }
+  
+  .form-header {
+    padding-bottom: 0;
+  }
+  
+  .form-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-content {
+    padding-top: 0;
+  }
+  
+  .form-item {
+    --background: transparent;
+    --border-color: #e0e0e0;
+    --highlight-color-focused: var(--ion-color-tertiary);
+    margin-bottom: 15px;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    border-radius: 10px;
+  }
+  
+  .input-label {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .custom-input {
+    --padding-start: 10px !important;
+  }
+  
+  .submit-button {
+    --border-radius: 10px;
+    margin-top: 10px;
+    height: 50px;
+    font-weight: 500;
+    --box-shadow: 0 4px 8px rgba(88, 86, 214, 0.2);
+  }
+  
+  .submit-button:disabled {
+    --background: #cccccc;
+    --box-shadow: none;
+  }
+  
+  /* Estilos para la lista de proveedores */
+  .supplier-list-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0;
+  }
+  
+  .list-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .supplier-count {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .supplier-list {
+    padding: 0;
+  }
+  
+  .supplier-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --background: white;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+  
+  .supplier-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .supplier-avatar {
+    width: 50px;
+    height: 50px;
+    margin: 10px;
+    background: #e0dfff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  
+  .supplier-info {
+    margin: 10px 0;
+  }
+  
+  .supplier-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .supplier-id {
+    font-size: 0.8rem;
+    color: #666;
+    margin-left: 5px;
+    font-weight: normal;
+  }
+  
+  .supplier-details {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .supplier-detail {
+    margin: 2px 0;
+    font-size: 0.85rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+  }
+  
+  .action-buttons {
+    display: flex;
+  }
+  
+  .edit-button, .delete-button {
+    --padding-start: 5px;
+    --padding-end: 5px;
+  }

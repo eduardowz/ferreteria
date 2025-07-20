@@ -1,0 +1,225 @@
+<ion-header>
+  <ion-toolbar class="header-toolbar">
+    <!-- Botón de regreso -->
+    <ion-buttons slot="start">
+      <ion-button class="back-button" fill="clear" (click)="regresarHome()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    
+    <ion-title class="page-title">
+      <span class="title-icon">🛍️</span>
+      <span *ngIf="!esAdmin">Catálogo de Productos</span>
+      <span *ngIf="esAdmin">Gestión de Productos</span>
+    </ion-title>
+    
+    <ion-buttons slot="end">
+      <!-- Botón para alternar vista (solo visible para admin) -->
+      <ion-button *ngIf="esAdmin" fill="clear" (click)="cambiarVista('grid')" [color]="vistaActual === 'grid' ? 'light' : 'medium'">
+        <ion-icon name="grid-outline"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="esAdmin" fill="clear" (click)="cambiarVista('lista')" [color]="vistaActual === 'lista' ? 'light' : 'medium'">
+        <ion-icon name="list-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="product-content">
+  <!-- Botón para mostrar formulario (solo admin) -->
+  <ion-button *ngIf="esAdmin" 
+              expand="block" 
+              class="toggle-form-button" 
+              color="danger" 
+              (click)="mostrarFormulario = !mostrarFormulario; resetearFormulario()">
+    <span class="emoji-icon">{{ mostrarFormulario ? '❌' : '➕' }}</span>
+    {{ mostrarFormulario ? 'Cancelar' : 'Agregar Producto' }}
+  </ion-button>
+
+  <!-- Formulario para agregar/editar producto (solo admin) -->
+  <ion-card *ngIf="mostrarFormulario && esAdmin" class="form-card">
+    <ion-card-header class="form-header">
+      <ion-card-title class="form-title">
+        <span class="emoji-icon">{{ nuevoProducto.id === 0 ? '➕' : '✏️' }}</span>
+        {{ nuevoProducto.id === 0 ? 'Agregar Producto' : 'Editar Producto' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content class="form-content">
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">🏷️</span>Nombre
+        </ion-label>
+        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.nombre" placeholder="Nombre del producto"></ion-input>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">📝</span>Descripción
+        </ion-label>
+        <ion-textarea class="custom-input" [(ngModel)]="nuevoProducto.descripcion" placeholder="Descripción del producto"></ion-textarea>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">💰</span>Precio ($)
+        </ion-label>
+        <ion-input class="custom-input" type="number" [(ngModel)]="nuevoProducto.precio" placeholder="0.00"></ion-input>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">📦</span>Stock
+        </ion-label>
+        <ion-input class="custom-input" type="number" [(ngModel)]="nuevoProducto.stock" placeholder="0"></ion-input>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">🏪</span>Categoría
+        </ion-label>
+        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.categoria" placeholder="Categoría"></ion-input>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">📅</span>Fecha
+        </ion-label>
+        <ion-input class="custom-input" type="date" [(ngModel)]="nuevoProducto.fecha"></ion-input>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">🏭</span>Proveedor
+        </ion-label>
+        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.proveedor" placeholder="Nombre del proveedor"></ion-input>
+      </ion-item>
+      
+      <ion-item class="form-item">
+        <ion-label class="input-label" position="stacked">
+          <span class="input-emoji">🖼️</span>URL de Imagen
+        </ion-label>
+        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.image" placeholder="assets/images/producto.jpg"></ion-input>
+      </ion-item>
+      
+      <ion-button expand="block" 
+                  class="submit-button" 
+                  color="danger" 
+                  (click)="guardarProducto()">
+        <span class="action-emoji">{{ nuevoProducto.id === 0 ? '➕' : '✅' }}</span>
+        {{ nuevoProducto.id === 0 ? 'Agregar' : 'Actualizar' }}
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Vista Grid (estilo catálogo visual) -->
+  <div *ngIf="vistaActual === 'grid'">
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="6" size-lg="4" *ngFor="let producto of productos; let i = index">
+          <ion-card>
+            <ion-img [src]="producto.image || 'assets/images/placeholder.jpg'" [alt]="producto.nombre"></ion-img>
+            <ion-card-header>
+              <ion-card-title>{{ producto.nombre }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <p>{{ producto.descripcion }}</p>
+              <p><strong>Precio: ${{ producto.precio }}</strong></p>
+              <p *ngIf="esAdmin">Stock: {{ producto.stock }}</p>
+              <p *ngIf="esAdmin">Categoría: {{ producto.categoria }}</p>
+              <p *ngIf="esAdmin">Proveedor: {{ producto.proveedor }}</p>
+              
+              <!-- Botones para usuarios normales -->
+              <ion-button *ngIf="!esAdmin" expand="block" (click)="agregarAlCarrito(producto)" 
+                         [disabled]="producto.stock === 0">
+                <ion-icon name="cart-outline" slot="start"></ion-icon>
+                {{ producto.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito' }}
+              </ion-button>
+              
+              <!-- Botones para administradores -->
+              <div *ngIf="esAdmin">
+                <ion-button size="small" fill="clear" (click)="editarProducto(i)">
+                  <ion-icon name="create-outline"></ion-icon>
+                  Editar
+                </ion-button>
+                <ion-button size="small" fill="clear" color="danger" (click)="eliminarProducto(i)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                  Eliminar
+                </ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <!-- Vista Lista (estilo administrativo) -->
+  <ion-card *ngIf="vistaActual === 'lista' && esAdmin" class="product-list-card">
+    <ion-card-header class="list-header">
+      <ion-card-title class="list-title">
+        <span class="emoji-icon">📋</span>
+        Lista de Productos
+      </ion-card-title>
+      <div class="product-count">
+        <span class="emoji-icon">📊</span>
+        {{ productos.length }} producto(s)
+      </div>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list class="product-list">
+        <ion-item *ngFor="let producto of productos; let i = index" class="product-item">
+          <div class="product-avatar">
+            <span class="avatar-emoji">🥤</span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">
+              {{ producto.nombre }}
+              <span class="product-id">#{{ producto.id }}</span>
+            </div>
+            <div class="product-description">{{ producto.descripcion }}</div>
+            <div class="product-details">
+              <div class="product-detail">
+                <span class="detail-emoji">💰</span>
+                Precio: ${{ producto.precio }}
+              </div>
+              <div class="product-detail">
+                <span class="detail-emoji">📦</span>
+                Stock: {{ producto.stock }}
+              </div>
+              <div class="product-detail">
+                <span class="detail-emoji">🏪</span>
+                Categoría: {{ producto.categoria }}
+              </div>
+              <div class="product-detail">
+                <span class="detail-emoji">🏭</span>
+                Proveedor: {{ producto.proveedor }}
+              </div>
+              <div class="product-detail">
+                <span class="detail-emoji">📅</span>
+                Fecha: {{ producto.fecha }}
+              </div>
+            </div>
+          </div>
+          <div class="action-buttons" slot="end">
+            <ion-button class="edit-button" fill="clear" color="warning" (click)="editarProducto(i)">
+              <span class="action-emoji">✏️</span>
+            </ion-button>
+            <ion-button class="delete-button" fill="clear" color="danger" (click)="eliminarProducto(i)">
+              <span class="action-emoji">🗑️</span>
+            </ion-button>
+          </div>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Mensaje cuando no hay productos -->
+  <ion-card *ngIf="productos.length === 0" class="product-list-card">
+    <ion-card-content>
+      <p style="text-align: center; color: #666;">
+        <span class="emoji-icon">📭</span>
+        No hay productos disponibles
+      </p>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -1,0 +1,114 @@
+<ion-header>
+  <ion-toolbar color="warning" class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" class="back-button" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center page-title">
+      <span class="title-icon">👥</span>
+      Gestión de Clientes
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding client-content">
+  <!-- Botón para mostrar/ocultar formulario -->
+  <ion-button expand="block" color="warning" (click)="mostrarFormulario = !mostrarFormulario" class="toggle-form-button">
+    <span slot="start" class="emoji-icon">{{ mostrarFormulario ? '❌' : '➕' }}</span>
+    {{ mostrarFormulario ? 'Cancelar' : 'Agregar Cliente' }}
+  </ion-button>
+
+  <!-- Formulario de agregar/editar cliente -->
+  <ion-card *ngIf="mostrarFormulario" class="form-card">
+    <ion-card-header class="form-header">
+      <ion-card-title class="form-title">
+        <span class="emoji-icon">👤</span>
+        {{ clienteEditandoIndex !== null ? 'Editar Cliente' : 'Nuevo Cliente' }}
+      </ion-card-title>
+    </ion-card-header>
+    
+    <ion-card-content class="form-content">
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Nombre</ion-label>
+        <ion-input [(ngModel)]="nombre" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">👤</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Teléfono</ion-label>
+        <ion-input [(ngModel)]="telefono" type="tel" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">📞</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Correo electrónico</ion-label>
+        <ion-input [(ngModel)]="correo" type="email" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">✉️</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Fecha de registro</ion-label>
+        <ion-input [(ngModel)]="fecha" type="date" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">📅</span>
+      </ion-item>
+
+      <ion-button 
+        expand="block" 
+        color="warning" 
+        (click)="agregar()" 
+        class="submit-button"
+        [disabled]="!nombre || !telefono || !correo || !fecha"
+      >
+        <span slot="start" class="emoji-icon">
+          {{ clienteEditandoIndex !== null ? '💾' : '➕' }}
+        </span>
+        {{ clienteEditandoIndex !== null ? 'Guardar Cambios' : 'Agregar Cliente' }}
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Lista de clientes -->
+  <ion-card class="client-list-card">
+    <ion-card-header class="list-header">
+      <ion-card-title class="list-title">
+        <span class="emoji-icon">📋</span>
+        Clientes Registrados
+      </ion-card-title>
+      <ion-note class="client-count">{{clientes.length}} cliente(s)</ion-note>
+    </ion-card-header>
+    
+    <ion-list lines="none" class="client-list">
+      <ion-item *ngFor="let c of clientes; let i = index" class="client-item">
+        <ion-avatar slot="start" class="client-avatar">
+          <span class="avatar-emoji">👤</span>
+        </ion-avatar>
+        
+        <ion-label class="client-info">
+          <h2 class="client-name">{{ c.nombre }}</h2>
+          <div class="client-details">
+            <p class="client-detail">
+              <span class="detail-emoji">📞</span>
+              {{ c.telefono }}
+            </p>
+            <p class="client-detail">
+              <span class="detail-emoji">✉️</span>
+              {{ c.correo }}
+            </p>
+            <p class="client-detail">
+              <span class="detail-emoji">📅</span>
+              {{ c.fecha | date:'mediumDate' }}
+            </p>
+          </div>
+        </ion-label>
+        
+        <ion-buttons slot="end" class="action-buttons">
+          <ion-button fill="clear" color="medium" (click)="editarCliente(i)" class="edit-button">
+            <span class="action-emoji">✏️</span>
+          </ion-button>
+          <ion-button fill="clear" color="danger" (click)="eliminarCliente(i)" class="delete-button">
+            <span class="action-emoji">🗑️</span>
+          </ion-button>
+        </ion-buttons>        
+      </ion-item>
+    </ion-list>
+  </ion-card>
+</ion-content>

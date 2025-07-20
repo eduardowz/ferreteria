@@ -1,0 +1,124 @@
+<ion-header>
+  <ion-toolbar color="tertiary" class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" class="back-button" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center page-title">
+      <span class="title-icon">🏢</span>
+      Gestión de Proveedores
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding supplier-content">
+  <!-- Botón para mostrar/ocultar formulario -->
+  <ion-button expand="block" color="tertiary" (click)="mostrarFormulario = !mostrarFormulario" class="toggle-form-button">
+    <span slot="start" class="emoji-icon">{{ mostrarFormulario ? '❌' : (nuevoProveedor.id ? '✏️' : '➕') }}</span>
+    {{ mostrarFormulario ? 'Cancelar' : (nuevoProveedor.id ? 'Editar Proveedor' : 'Agregar Proveedor') }}
+  </ion-button>
+
+  <!-- Formulario de agregar/editar proveedor -->
+  <ion-card *ngIf="mostrarFormulario" class="form-card">
+    <ion-card-header class="form-header">
+      <ion-card-title class="form-title">
+        <span class="emoji-icon">📝</span>
+        {{ nuevoProveedor.id !== 0 ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
+      </ion-card-title>
+    </ion-card-header>
+    
+    <ion-card-content class="form-content">
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Nombre</ion-label>
+        <ion-input [(ngModel)]="nuevoProveedor.nombre" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">👤</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Teléfono</ion-label>
+        <ion-input [(ngModel)]="nuevoProveedor.telefono" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">📞</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Empresa</ion-label>
+        <ion-input [(ngModel)]="nuevoProveedor.empresa" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">🏭</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Correo</ion-label>
+        <ion-input type="email" [(ngModel)]="nuevoProveedor.correo" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">✉️</span>
+      </ion-item>
+
+      <ion-item lines="full" class="form-item">
+        <ion-label position="floating" class="input-label">Fecha de Registro</ion-label>
+        <ion-input type="date" [(ngModel)]="nuevoProveedor.fecha" class="custom-input"></ion-input>
+        <span slot="start" class="input-emoji">📅</span>
+      </ion-item>
+
+      <ion-button 
+        expand="block" 
+        color="tertiary" 
+        (click)="guardarProveedor()" 
+        class="submit-button"
+        [disabled]="!nuevoProveedor.nombre || !nuevoProveedor.telefono || !nuevoProveedor.empresa"
+      >
+        <span slot="start" class="emoji-icon">
+          {{ nuevoProveedor.id !== 0 ? '💾' : '➕' }}
+        </span>
+        {{ nuevoProveedor.id !== 0 ? 'Guardar Cambios' : 'Agregar Proveedor' }}
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Lista de proveedores -->
+  <ion-card class="supplier-list-card">
+    <ion-card-header class="list-header">
+      <ion-card-title class="list-title">
+        <span class="emoji-icon">📋</span>
+        Proveedores Registrados
+      </ion-card-title>
+      <ion-note class="supplier-count">{{proveedores.length}} proveedor(es)</ion-note>
+    </ion-card-header>
+    
+    <ion-list lines="none" class="supplier-list">
+      <ion-item *ngFor="let p of proveedores; let i = index" class="supplier-item">
+        <ion-avatar slot="start" class="supplier-avatar">
+          <span class="avatar-emoji">🏢</span>
+        </ion-avatar>
+        
+        <ion-label class="supplier-info">
+          <h2 class="supplier-name">{{ p.nombre }} <span class="supplier-id">(ID: {{ p.id }})</span></h2>
+          <div class="supplier-details">
+            <p class="supplier-detail">
+              <span class="detail-emoji">📞</span>
+              {{ p.telefono }}
+            </p>
+            <p class="supplier-detail">
+              <span class="detail-emoji">🏭</span>
+              {{ p.empresa }}
+            </p>
+            <p class="supplier-detail">
+              <span class="detail-emoji">✉️</span>
+              {{ p.correo }}
+            </p>
+            <p class="supplier-detail">
+              <span class="detail-emoji">📅</span>
+              {{ p.fecha | date:'mediumDate' }}
+            </p>
+          </div>
+        </ion-label>
+        
+        <ion-buttons slot="end" class="action-buttons">
+          <ion-button fill="clear" color="medium" (click)="editarProveedor(i)" class="edit-button">
+            <span class="action-emoji">✏️</span>
+          </ion-button>
+          <ion-button fill="clear" color="danger" (click)="eliminarProveedor(i)" class="delete-button">
+            <span class="action-emoji">🗑️</span>
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+</ion-content>
