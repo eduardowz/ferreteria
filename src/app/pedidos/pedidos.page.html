@@ -8,6 +8,10 @@
       {{ esAdmin ? 'Gestión de Pedidos' : 'Mi Carrito' }}
     </ion-title>
     <ion-buttons slot="end">
+      <!-- Botón para cambiar rol (solo para demo/testing) -->
+      <ion-button fill="clear" (click)="cambiarRolDemo()" class="demo-button">
+        <span class="action-emoji">🔄</span>
+      </ion-button>
       <ion-button fill="clear" (click)="cerrarSesion()" class="logout-button">
         <span class="action-emoji">🚪</span>
       </ion-button>
@@ -16,6 +20,14 @@
 </ion-header>
 
 <ion-content class="ion-padding order-content">
+  <!-- Información del usuario actual -->
+  <ion-card class="user-info-card">
+    <ion-card-content>
+      <p><span class="emoji-icon">👤</span> Usuario: {{ usuarioActual.nombre }}</p>
+      <p><span class="emoji-icon">🎭</span> Rol: {{ esAdmin ? 'Administrador' : 'Usuario' }}</p>
+    </ion-card-content>
+  </ion-card>
+
   <!-- Vista de Administrador -->
   <div *ngIf="esAdmin">
     <!-- Filtros para admin -->
@@ -196,171 +208,3 @@
         </ion-card-title>
         <ion-note class="order-count">{{carrito.length}} producto(s)</ion-note>
       </ion-card-header>
-      
-      <ion-list lines="none" class="cart-list">
-        <ion-item *ngFor="let item of carrito; let i = index" class="cart-item">
-          <ion-avatar slot="start" class="order-avatar">
-            <span class="avatar-emoji">📦</span>
-          </ion-avatar>
-          
-          <ion-label class="order-info">
-            <h2 class="order-title">{{ item.producto }}</h2>
-            <div class="order-details">
-              <p class="order-detail">
-                <span class="detail-emoji">🔢</span>
-                Cantidad: {{ item.cantidad }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">💰</span>
-                Precio unitario: ${{ item.precio }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">💵</span>
-                Subtotal: ${{ item.cantidad * item.precio }}
-              </p>
-            </div>
-          </ion-label>
-          
-          <ion-buttons slot="end" class="action-buttons">
-            <ion-button fill="clear" color="primary" (click)="editarCantidad(i)" class="edit-button">
-              <span class="action-emoji">✏️</span>
-            </ion-button>
-            <ion-button fill="clear" color="danger" (click)="eliminarDelCarrito(i)" class="delete-button">
-              <span class="action-emoji">🗑️</span>
-            </ion-button>
-          </ion-buttons>
-        </ion-item>
-      </ion-list>
-
-      <!-- Total del carrito -->
-      <ion-card-content class="cart-total">
-        <div class="total-section">
-          <h3><span class="emoji-icon">💰</span>Total: ${{ calcularTotal() }}</h3>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Métodos de pago -->
-    <ion-card class="payment-card" *ngIf="carrito.length > 0">
-      <ion-card-header>
-        <ion-card-title class="payment-title">
-          <span class="emoji-icon">💳</span>
-          Método de Pago
-        </ion-card-title>
-      </ion-card-header>
-      
-      <ion-card-content>
-        <ion-radio-group [(ngModel)]="metodoPago">
-          <ion-item>
-            <ion-radio value="tarjeta" slot="start"></ion-radio>
-            <ion-label>
-              <span class="payment-emoji">💳</span>
-              Tarjeta de Crédito
-            </ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="efectivo" slot="start"></ion-radio>
-            <ion-label>
-              <span class="payment-emoji">💰</span>
-              Efectivo
-            </ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="transferencia" slot="start"></ion-radio>
-            <ion-label>
-              <span class="payment-emoji">📱</span>
-              Transferencia
-            </ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="paypal" slot="start"></ion-radio>
-            <ion-label>
-              <span class="payment-emoji">🏦</span>
-              PayPal
-            </ion-label>
-          </ion-item>
-        </ion-radio-group>
-
-        <ion-button 
-          expand="block" 
-          color="success" 
-          (click)="realizarPedido()" 
-          class="checkout-button"
-          [disabled]="!metodoPago || carrito.length === 0"
-        >
-          <span slot="start" class="emoji-icon">✅</span>
-          Realizar Pedido - ${{ calcularTotal() }}
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Historial de pedidos del usuario -->
-    <ion-card class="history-card">
-      <ion-card-header>
-        <ion-card-title class="history-title">
-          <span class="emoji-icon">📋</span>
-          Mis Pedidos
-        </ion-card-title>
-        <ion-note class="order-count">{{misPedidos.length}} pedido(s)</ion-note>
-      </ion-card-header>
-      
-      <ion-list lines="none" class="history-list" *ngIf="misPedidos.length > 0">
-        <ion-item *ngFor="let pedido of misPedidos" class="history-item">
-          <ion-avatar slot="start" class="order-avatar">
-            <span class="avatar-emoji">📝</span>
-          </ion-avatar>
-          
-          <ion-label class="order-info">
-            <h2 class="order-title">Pedido #{{ pedido.id }}</h2>
-            <div class="order-details">
-              <p class="order-detail" *ngIf="pedido.productos && pedido.productos.length > 0">
-                <span class="detail-emoji">📦</span>
-                {{ pedido.productos.length }} producto(s)
-              </p>
-              <p class="order-detail" *ngIf="!pedido.productos || pedido.productos.length === 0">
-                <span class="detail-emoji">📦</span>
-                {{ pedido.producto }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">💰</span>
-                Total: ${{ pedido.total }}
-              </p>
-              <p class="order-detail" *ngIf="pedido.metodoPago">
-                <span class="detail-emoji">💳</span>
-                Pago: {{ pedido.metodoPago }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">📅</span>
-                {{ pedido.fecha | date:'medium' }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">🔄</span>
-                Estado: 
-                <span class="status-badge" [class.status-pending]="pedido.estado === 'Pendiente'"
-                  [class.status-sent]="pedido.estado === 'Enviado'"
-                  [class.status-delivered]="pedido.estado === 'Entregado'"
-                  [class.status-cancelled]="pedido.estado === 'Cancelado'">
-                  {{ pedido.estado }}
-                </span>
-              </p>
-            </div>
-          </ion-label>
-          
-          <ion-buttons slot="end" class="action-buttons">
-            <ion-button fill="clear" color="primary" (click)="verDetallesPedido(pedido)" class="view-button">
-              <span class="action-emoji">👁️</span>
-            </ion-button>
-          </ion-buttons>
-        </ion-item>
-      </ion-list>
-      
-      <ion-card-content *ngIf="misPedidos.length === 0">
-        <div class="empty-state">
-          <span class="empty-emoji">📭</span>
-          <p>No tienes pedidos aún</p>
-          <small>¡Empieza agregando productos al carrito!</small>
-        </div>
-      </ion-card-content>
-    </ion-card>
-  </div>
-</ion-content>

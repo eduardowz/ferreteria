@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar,
   IonBackButton, IonButtons, IonInput, IonItem,
@@ -9,6 +10,9 @@ import {
   IonSelect, IonSelectOption, IonAvatar, IonNote, IonRadioGroup, IonRadio,
   AlertController, ToastController
 } from '@ionic/angular/standalone';
+
+// Importar el servicio de carrito
+import { CarritoService, ProductoCarrito } from '../services/carrito.service';
 
 interface Pedido {
   id: number;
@@ -49,7 +53,7 @@ interface Usuario {
     IonButton, IonSelect, IonSelectOption
   ]
 })
-export class PedidosPage implements OnInit {
+export class PedidosPage implements OnInit, OnDestroy {
   // Datos del usuario actual
   usuarioActual: Usuario = { id: '', nombre: '', email: '', rol: 'usuario' };
   esAdmin = false;
@@ -65,8 +69,11 @@ export class PedidosPage implements OnInit {
   filtroEstado = '';
   filtroCliente = '';
 
-  // Carrito y compra para usuario
+  // Carrito local y compartido
   carrito: ItemCarrito[] = [];
+  carritoCompartido: ProductoCarrito[] = [];
+  carritoSubscription?: Subscription;
+  
   metodoPago = '';
   mostrarFormulario = false;
   nuevoItem: ItemCarrito = { producto: '', cantidad: 1, precio: 0 };
@@ -77,13 +84,21 @@ export class PedidosPage implements OnInit {
   constructor(
     private router: Router,
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private carritoService: CarritoService  // Inyectar el servicio
   ) {}
 
   ngOnInit() {
     this.cargarUsuarioActual();
     this.cargarDatos();
     this.cargarCarrito();
+    
+    // Suscribirse a cambios del carrito compartido
+    this.carritoSubscription = this.carritoService.carrito$.subscribe(
+      carrito => {
+        this.carritoCompartido = carrito;
+      }
+    );
     
     if (this.esAdmin) {
       this.obtenerClientesUnicos();
@@ -93,31 +108,96 @@ export class PedidosPage implements OnInit {
     }
   }
 
+  ngOnDestroy() {
+    // Limpiar suscripción para evitar memory leaks
+    if (this.carritoSubscription) {
+      this.carritoSubscription.unsubscribe();
+    }
+  }
+
   cargarUsuarioActual() {
     const userData = localStorage.getItem('usuarioActual');
     if (userData) {
-      this.usuarioActual = JSON.parse(userData);
-      this.esAdmin = this.usuarioActual.rol === 'admin';
+      try {
+        this.usuarioActual = JSON.parse(userData);
+        this.esAdmin = this.usuarioActual.rol === 'admin';
+      } catch (error) {
+        console.error('Error al parsear datos del usuario:', error);
+        this.crearUsuarioPorDefecto();
+      }
     } else {
-      // Si no hay usuario logueado, redirigir al login
-      this.router.navigate(['/login']);
+      this.crearUsuarioPorDefecto();
     }
+  }
+
+  crearUsuarioPorDefecto() {
+    this.usuarioActual = {
+      id: 'user_' + Date.now(),
+      nombre: 'Usuario Demo',
+      email: 'demo@email.com',
+      rol: 'usuario'
+    };
+    this.esAdmin = false;
+    
+    localStorage.setItem('usuarioActual', JSON.stringify(this.usuarioActual));
+    this.mostrarToast('Sesión iniciada como usuario demo', 'info');
   }
 
   cargarDatos() {
     const pedidosData = localStorage.getItem('pedidos');
-    if (pedidosData) this.pedidos = JSON.parse(pedidosData);
+    if (pedidosData) {
+      try {
+        this.pedidos = JSON.parse(pedidosData);
+      } catch (error) {
+        console.error('Error al cargar pedidos:', error);
+        this.pedidos = [];
+      }
+    }
 
     const clientesData = localStorage.getItem('clientes');
-    if (clientesData) this.clientes = JSON.parse(clientesData);
+    if (clientesData) {
+      try {
+        this.clientes = JSON.parse(clientesData);
+      } catch (error) {
+        console.error('Error al cargar clientes:', error);
+        this.clientes = [];
+      }
+    }
 
     const productosData = localStorage.getItem('productos');
-    if (productosData) this.productos = JSON.parse(productosData);
+    if (productosData) {
+      try {
+        this.productos = JSON.parse(productosData);
+      } catch (error) {
+        console.error('Error al cargar productos:', error);
+        this.productos = this.crearProductosPorDefecto();
+      }
+    } else {
+      this.productos = this.crearProductosPorDefecto();
+      localStorage.setItem('productos', JSON.stringify(this.productos));
+    }
+  }
+
+  crearProductosPorDefecto() {
+    return [
+      { id: 1, nombre: 'Red Bull Energy Drink 250ml', precio: 45, stock: 50 },
+      { id: 2, nombre: 'Monster Energy Original 473ml', precio: 35, stock: 30 },
+      { id: 3, nombre: 'Rockstar Energy Drink 500ml', precio: 45, stock: 25 },
+      { id: 4, nombre: 'Monster Ultra Zero 355ml', precio: 35, stock: 40 },
+      { id: 5, nombre: 'Prime Energy Drink 355ml', precio: 20, stock: 60 }
+    ];
   }
 
   cargarCarrito() {
     const carritoData = localStorage.getItem(`carrito_${this.usuarioActual.id}`);
-    if (carritoData) this.carrito = JSON.parse(carritoData);
+    if (carritoData) {
+      try {
+        this.carrito = JSON.parse(carritoData);
+      } catch (error) {
+        console.error('Error al cargar carrito:', error);
+        this.carrito = [];
+      }
+    }
   }
 
   cargarMisPedidos() {
@@ -136,7 +216,6 @@ export class PedidosPage implements OnInit {
     });
   }
 
-  // NUEVAS FUNCIONES AGREGADAS
   actualizarPrecioProducto() {
     const producto = this.productos.find(p => p.nombre === this.nuevoItem.producto);
     if (producto) {
@@ -213,7 +292,7 @@ export class PedidosPage implements OnInit {
     await alert.present();
   }
 
-  // Métodos para el carrito (usuario)
+  // MÉTODO ACTUALIZADO: Agregar al carrito (ahora usa el servicio compartido)
   agregarAlCarrito() {
     const producto = this.productos.find(p => p.nombre === this.nuevoItem.producto);
     if (!producto) {
@@ -226,7 +305,7 @@ export class PedidosPage implements OnInit {
       return;
     }
 
-    // Verificar si el producto ya está en el carrito
+    // Agregar al carrito local (página de pedidos)
     const itemExistente = this.carrito.find(item => item.producto === this.nuevoItem.producto);
     if (itemExistente) {
       if (itemExistente.cantidad + this.nuevoItem.cantidad > producto.stock) {
@@ -242,19 +321,51 @@ export class PedidosPage implements OnInit {
       });
     }
 
-    this.guardarCarrito();
-    this.mostrarToast('Producto agregado al carrito', 'success');
-    this.resetearFormulario();
+    // NUEVO: También agregar al carrito compartido (página de productos)
+    const success = this.carritoService.agregarProducto({
+      id: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      cantidad: this.nuevoItem.cantidad
+    });
+
+    if (success) {
+      this.guardarCarrito();
+      this.mostrarToast('Producto agregado al carrito (sincronizado con página de productos)', 'success');
+      this.resetearFormulario();
+    } else {
+      this.mostrarToast('Error al agregar al carrito compartido', 'danger');
+    }
   }
 
   eliminarDelCarrito(index: number) {
+    const item = this.carrito[index];
+    
+    // Eliminar del carrito local
     this.carrito.splice(index, 1);
     this.guardarCarrito();
+    
+    // También eliminar del carrito compartido
+    const producto = this.productos.find(p => p.nombre === item.producto);
+    if (producto) {
+      this.carritoService.eliminarProducto(producto.id);
+    }
+    
     this.mostrarToast('Producto eliminado del carrito', 'warning');
   }
 
   calcularTotal(): number {
     return this.carrito.reduce((total, item) => total + (item.cantidad * item.precio), 0);
+  }
+
+  // NUEVO: Método para obtener el total del carrito compartido
+  calcularTotalCompartido(): number {
+    return this.carritoService.calcularTotal();
+  }
+
+  // NUEVO: Método para obtener la cantidad total del carrito compartido
+  obtenerCantidadTotalCompartida(): number {
+    return this.carritoService.obtenerCantidadTotal();
   }
 
   async realizarPedido() {
@@ -325,10 +436,11 @@ export class PedidosPage implements OnInit {
     localStorage.setItem('pedidos', JSON.stringify(this.pedidos));
     localStorage.setItem('productos', JSON.stringify(this.productos));
 
-    // Limpiar carrito
+    // Limpiar carritos (local y compartido)
     this.carrito = [];
     this.metodoPago = '';
     this.guardarCarrito();
+    this.carritoService.vaciarCarrito();
 
     // Actualizar mis pedidos
     this.cargarMisPedidos();
@@ -337,7 +449,7 @@ export class PedidosPage implements OnInit {
     this.mostrarFormulario = false;
   }
 
-  // Métodos para admin
+  // Métodos para admin (sin cambios)
   async cambiarEstadoPedido(pedido: Pedido) {
     const alert = await this.alertController.create({
       header: 'Cambiar Estado',
@@ -455,6 +567,55 @@ export class PedidosPage implements OnInit {
           handler: () => {
             localStorage.removeItem('usuarioActual');
             this.router.navigate(['/login']);
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async cambiarRolDemo() {
+    const alert = await this.alertController.create({
+      header: 'Cambiar Rol Demo',
+      message: 'Selecciona el rol para testing:',
+      inputs: [
+        {
+          name: 'rol',
+          type: 'radio',
+          label: 'Usuario Normal',
+          value: 'usuario',
+          checked: this.usuarioActual.rol === 'usuario'
+        },
+        {
+          name: 'rol',
+          type: 'radio',
+          label: 'Administrador',
+          value: 'admin',
+          checked: this.usuarioActual.rol === 'admin'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Cambiar',
+          handler: (data) => {
+            if (data) {
+              this.usuarioActual.rol = data;
+              this.esAdmin = data === 'admin';
+              localStorage.setItem('usuarioActual', JSON.stringify(this.usuarioActual));
+              this.mostrarToast(`Rol cambiado a ${data}`, 'success');
+              
+              if (this.esAdmin) {
+                this.obtenerClientesUnicos();
+                this.filtrarPedidos();
+              } else {
+                this.cargarMisPedidos();
+              }
+            }
           }
         }
       ]

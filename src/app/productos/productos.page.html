@@ -1,11 +1,13 @@
 <ion-header>
   <ion-toolbar class="header-toolbar">
-    <!-- Botón de regreso -->
+    <!-- Botón de regreso (comentado para no redirigir) -->
+    <!--
     <ion-buttons slot="start">
       <ion-button class="back-button" fill="clear" (click)="regresarHome()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
+    -->
     
     <ion-title class="page-title">
       <span class="title-icon">🛍️</span>
@@ -14,7 +16,13 @@
     </ion-title>
     
     <ion-buttons slot="end">
-      <!-- Botón para alternar vista (solo visible para admin) -->
+      <!-- Botón para mostrar/ocultar carrito (solo para usuarios normales) -->
+      <ion-button *ngIf="!esAdmin" fill="clear" (click)="mostrarCarrito = !mostrarCarrito" [color]="mostrarCarrito ? 'light' : 'medium'">
+        <ion-icon name="cart-outline"></ion-icon>
+        <ion-badge *ngIf="carrito.length > 0" color="danger">{{ carrito.length }}</ion-badge>
+      </ion-button>
+      
+      <!-- Botones para alternar vista (solo visible para admin) -->
       <ion-button *ngIf="esAdmin" fill="clear" (click)="cambiarVista('grid')" [color]="vistaActual === 'grid' ? 'light' : 'medium'">
         <ion-icon name="grid-outline"></ion-icon>
       </ion-button>
@@ -26,6 +34,77 @@
 </ion-header>
 
 <ion-content class="product-content">
+  <!-- Sección del Carrito (solo para usuarios normales) -->
+  <ion-card *ngIf="!esAdmin && mostrarCarrito" class="cart-card">
+    <ion-card-header class="cart-header">
+      <ion-card-title class="cart-title">
+        <span class="emoji-icon">🛒</span>
+        Mi Carrito de Compras
+      </ion-card-title>
+      <div class="cart-count">
+        <span class="emoji-icon">📊</span>
+        {{ carrito.length }} producto(s)
+      </div>
+    </ion-card-header>
+    <ion-card-content>
+      <div *ngIf="carrito.length === 0" class="empty-cart">
+        <span class="emoji-icon">🛒</span>
+        Tu carrito está vacío
+      </div>
+      
+      <ion-list *ngIf="carrito.length > 0" class="cart-list">
+        <ion-item *ngFor="let item of carrito; let i = index" class="cart-item">
+          <div class="cart-product-avatar">
+            <span class="avatar-emoji">🥤</span>
+          </div>
+          <div class="cart-product-info">
+            <div class="cart-product-name">{{ item.nombre }}</div>
+            <div class="cart-product-details">
+              <div class="cart-detail">
+                <span class="detail-emoji">💰</span>
+                Precio: ${{ item.precio }}
+              </div>
+              <div class="cart-detail">
+                <span class="detail-emoji">📦</span>
+                Cantidad: {{ item.cantidad }}
+              </div>
+              <div class="cart-detail">
+                <span class="detail-emoji">💵</span>
+                Total: ${{ item.total }}
+              </div>
+            </div>
+          </div>
+          <div class="cart-actions" slot="end">
+            <ion-button fill="clear" color="success" (click)="aumentarCantidad(i)">
+              <ion-icon name="add-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" color="warning" (click)="disminuirCantidad(i)">
+              <ion-icon name="remove-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" color="danger" (click)="eliminarDelCarrito(i)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-item>
+      </ion-list>
+      
+      <div *ngIf="carrito.length > 0" class="cart-total">
+        <div class="total-amount">
+          <span class="emoji-icon">💰</span>
+          Total: ${{ calcularTotalCarrito() }}
+        </div>
+        <ion-button expand="block" color="success" class="checkout-button" (click)="procederCompra()">
+          <span class="action-emoji">✅</span>
+          Proceder a Comprar
+        </ion-button>
+        <ion-button expand="block" fill="outline" color="danger" class="clear-cart-button" (click)="vaciarCarrito()">
+          <span class="action-emoji">🗑️</span>
+          Vaciar Carrito
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
   <!-- Botón para mostrar formulario (solo admin) -->
   <ion-button *ngIf="esAdmin" 
               expand="block" 

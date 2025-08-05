@@ -1,9 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
+// Importar el servicio de carrito compartido
+import { CarritoService, ProductoCarrito } from '../services/carrito.service';
 
 interface Producto {
   id: number;
@@ -14,15 +18,7 @@ interface Producto {
   categoria: string;
   fecha: string;
   proveedor: string;
-  image?: string; // Agregar imagen opcional
-}
-
-interface ProductoCarrito {
-  id: number;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  total: number;
+  image?: string;
 }
 
 @Component({
@@ -32,49 +28,69 @@ interface ProductoCarrito {
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule]
 })
-export class ProductosPage implements OnInit {
+export class ProductosPage implements OnInit, OnDestroy {
   productos: Producto[] = [];
   proveedores: any[] = [];
   carrito: ProductoCarrito[] = [];
+  carritoSubscription?: Subscription;
+  
   esAdmin: boolean = false;
+  mostrarCarrito: boolean = false;
+  mostrarFormulario: boolean = false;
+  vistaActual: 'grid' | 'lista' = 'grid';
 
   nuevoProducto: Producto = this.crearProductoVacio();
 
-  mostrarFormulario = false;
-  vistaActual: 'grid' | 'lista' = 'grid'; // Nueva propiedad para alternar vistas
-
   constructor(
     private toastController: ToastController,
-    private router: Router
+    private router: Router,
+    private carritoService: CarritoService  // Inyectar el servicio compartido
   ) {}
 
   ngOnInit() {
-    // Verificar el rol del usuario
+    this.crearUsuarioInvitadoSiNoExiste();
     this.verificarRolUsuario();
-    
-    // Cargar productos
     this.cargarProductos();
-    
-    // Cargar proveedores
     this.cargarProveedores();
     
-    // Cargar carrito
-    this.cargarCarrito();
+    // Suscribirse al carrito compartido
+    this.carritoSubscription = this.carritoService.carrito$.subscribe(
+      carrito => {
+        this.carrito = carrito;
+      }
+    );
   }
 
-  // Método para regresar a la página de home
-  regresarHome() {
-    this.router.navigate(['/home']);
+  ngOnDestroy() {
+    // Limpiar suscripción para evitar memory leaks
+    if (this.carritoSubscription) {
+      this.carritoSubscription.unsubscribe();
+    }
+  }
+
+  crearUsuarioInvitadoSiNoExiste() {
+    const userData = localStorage.getItem('userData');
+    if (!userData) {
+      const usuarioInvitado = {
+        email: 'invitado@tienda.com',
+        rol: 'usuario',
+        nombre: 'Usuario Invitado',
+        id: 'guest-' + Date.now()
+      };
+      localStorage.setItem('userData', JSON.stringify(usuarioInvitado));
+    }
   }
 
   verificarRolUsuario() {
-    // Obtener el rol del usuario desde localStorage
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const user = JSON.parse(userData);
-      this.esAdmin = user.rol === 'admin';
+      try {
+        const user = JSON.parse(userData);
+        this.esAdmin = user.rol === 'admin';
+      } catch (error) {
+        this.esAdmin = false;
+      }
     } else {
-      // Si no hay datos del usuario, asumir que es usuario regular
       this.esAdmin = false;
     }
   }
@@ -149,13 +165,6 @@ export class ProductosPage implements OnInit {
     const provData = localStorage.getItem('proveedores');
     if (provData) {
       this.proveedores = JSON.parse(provData);
-    }
-  }
-
-  cargarCarrito() {
-    const carritoData = localStorage.getItem('carrito');
-    if (carritoData) {
-      this.carrito = JSON.parse(carritoData);
     }
   }
 
@@ -246,7 +255,7 @@ export class ProductosPage implements OnInit {
     }
   }
 
-  // Método para USUARIO - Agregar al carrito
+  // MÉTODO ACTUALIZADO: Agregar al carrito usando el servicio compartido
   agregarAlCarrito(producto: Producto) {
     if (this.esAdmin) {
       this.mostrarToast('Los administradores no pueden agregar productos al carrito', 'warning');
@@ -258,29 +267,106 @@ export class ProductosPage implements OnInit {
       return;
     }
 
-    // Verificar si el producto ya está en el carrito
-    const productoExistente = this.carrito.find(item => item.id === producto.id);
-    
-    if (productoExistente) {
-      // Si ya existe, aumentar la cantidad
-      productoExistente.cantidad += 1;
-      productoExistente.total = productoExistente.cantidad * productoExistente.precio;
-    } else {
-      // Si no existe, agregarlo al carrito
-      const nuevoItem: ProductoCarrito = {
-        id: producto.id,
-        nombre: producto.nombre,
-        precio: producto.precio,
-        cantidad: 1,
-        total: producto.precio
-      };
-      this.carrito.push(nuevoItem);
-    }
+    // Usar el servicio compartido para agregar al carrito
+    const success = this.carritoService.agregarProducto({
+      id: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      cantidad: 1
+    });
 
-    // Guardar carrito en localStorage
-    this.guardarCarritoEnLocalStorage();
+    if (success) {
+      this.mostrarToast(`${producto.nombre} agregado al carrito`, 'success');
+    } else {
+      this.mostrarToast('Error al agregar producto al carrito', 'danger');
+    }
+  }
+
+  // MÉTODOS ACTUALIZADOS: Gestión del carrito usando el servicio compartido
+  aumentarCantidad(productoId: number) {
+    const item = this.carrito.find(c => c.id === productoId);
+    if (item) {
+      const producto = this.productos.find(p => p.id === productoId);
+      if (producto && item.cantidad < producto.stock) {
+        this.carritoService.actualizarCantidad(productoId, item.cantidad + 1);
+        this.mostrarToast('Cantidad aumentada', 'success');
+      } else {
+        this.mostrarToast('Stock insuficiente', 'warning');
+      }
+    }
+  }
+
+  disminuirCantidad(productoId: number) {
+    const item = this.carrito.find(c => c.id === productoId);
+    if (item) {
+      if (item.cantidad > 1) {
+        this.carritoService.actualizarCantidad(productoId, item.cantidad - 1);
+        this.mostrarToast('Cantidad disminuida', 'success');
+      } else {
+        this.eliminarDelCarrito(productoId);
+      }
+    }
+  }
+
+  eliminarDelCarrito(productoId: number) {
+    const item = this.carrito.find(c => c.id === productoId);
+    if (item) {
+      this.carritoService.eliminarProducto(productoId);
+      this.mostrarToast(`${item.nombre} eliminado del carrito`, 'warning');
+    }
+  }
+
+  vaciarCarrito() {
+    const confirmado = confirm('¿Estás seguro de que quieres vaciar el carrito?');
+    if (confirmado) {
+      this.carritoService.vaciarCarrito();
+      this.mostrarToast('Carrito vaciado', 'warning');
+    }
+  }
+
+  // MÉTODOS ACTUALIZADOS: Usar el servicio para cálculos
+  calcularTotalCarrito(): number {
+    return this.carritoService.calcularTotal();
+  }
+
+  obtenerCantidadTotal(): number {
+    return this.carritoService.obtenerCantidadTotal();
+  }
+
+  procederCompra() {
+    if (this.carrito.length === 0) {
+      this.mostrarToast('El carrito está vacío', 'warning');
+      return;
+    }
     
-    this.mostrarToast(`${producto.nombre} agregado al carrito`, 'success');
+    const total = this.calcularTotalCarrito();
+    const confirmado = confirm(`¿Proceder con la compra por un total de ${total}?`);
+    
+    if (confirmado) {
+      // Reducir el stock de los productos
+      this.carrito.forEach(item => {
+        const producto = this.productos.find(p => p.id === item.id);
+        if (producto) {
+          producto.stock -= item.cantidad;
+        }
+      });
+      
+      this.guardarEnLocalStorage();
+      this.carritoService.vaciarCarrito();
+      this.mostrarToast('¡Compra realizada exitosamente!', 'success');
+    }
+  }
+
+  // NUEVO: Método para sincronizar con el carrito de pedidos
+  sincronizarConPedidos() {
+    // Este método podría usarse si necesitas hacer alguna sincronización especial
+    // Por ahora, la sincronización es automática gracias al servicio compartido
+    this.mostrarToast('Carrito sincronizado con página de pedidos', 'info');
+  }
+
+  // NUEVO: Método para ir a la página de pedidos
+  irAPedidos() {
+    this.router.navigate(['/pedidos']);
   }
 
   resetearFormulario() {
@@ -289,10 +375,6 @@ export class ProductosPage implements OnInit {
 
   guardarEnLocalStorage() {
     localStorage.setItem('productos', JSON.stringify(this.productos));
-  }
-
-  guardarCarritoEnLocalStorage() {
-    localStorage.setItem('carrito', JSON.stringify(this.carrito));
   }
 
   async mostrarToast(mensaje: string, color: string) {
