@@ -8,29 +8,30 @@ import {
   IonBackButton, IonButtons, IonInput, IonItem,
   IonList, IonLabel, IonButton, IonCardTitle, IonCardHeader, IonCard, IonCardContent,
   IonSelect, IonSelectOption, IonAvatar, IonNote, IonRadioGroup, IonRadio,
+  IonBadge, // <-- AÑADE ESTA IMPORTACIÓN
   AlertController, ToastController
 } from '@ionic/angular/standalone';
 
-// Importar el servicio de carrito
-import { CarritoService, ProductoCarrito } from '../services/carrito.service';
-
-interface Pedido {
+interface CompraRealizada {
   id: number;
   cliente: string;
-  producto: string;
-  cantidad: number;
+  usuarioId: string;
+  productos: ProductoCompra[];
+  subtotal: number;
+  descuento: number;
+  total: number;
+  metodoPago: string;
   fecha: string;
   estado: string;
-  usuarioId: string;
-  total: number;
-  metodoPago?: string;
-  productos?: ItemCarrito[];
+  aplicaDescuento: boolean;
 }
 
-interface ItemCarrito {
-  producto: string;
-  cantidad: number;
+interface ProductoCompra {
+  id: number;
+  nombre: string;
   precio: number;
+  cantidad: number;
+  subtotalProducto: number;
 }
 
 interface Usuario {
@@ -46,7 +47,8 @@ interface Usuario {
   styleUrls: ['./pedidos.page.scss'],
   standalone: true,
   imports: [
-    IonRadio, IonRadioGroup, IonNote, IonAvatar, 
+    // Todos los componentes Ionic que estás usando:
+    IonBadge, IonRadio, IonRadioGroup, IonNote, IonAvatar, 
     IonCardContent, IonCard, IonCardHeader, IonCardTitle,
     CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar,
     IonBackButton, IonButtons, IonInput, IonItem, IonList, IonLabel,
@@ -58,233 +60,121 @@ export class PedidosPage implements OnInit, OnDestroy {
   usuarioActual: Usuario = { id: '', nombre: '', email: '', rol: 'usuario' };
   esAdmin = false;
 
-  // Datos generales
-  pedidos: Pedido[] = [];
-  pedidosFiltrados: Pedido[] = [];
-  clientes: any[] = [];
-  productos: any[] = [];
-  clientesUnicos: string[] = [];
-
+  // Datos de pedidos/compras
+  comprasRealizadas: CompraRealizada[] = [];
+  comprasFiltradas: CompraRealizada[] = [];
+  
   // Filtros para admin
   filtroEstado = '';
   filtroCliente = '';
-
-  // Carrito local y compartido
-  carrito: ItemCarrito[] = [];
-  carritoCompartido: ProductoCarrito[] = [];
-  carritoSubscription?: Subscription;
+  filtroMetodoPago = '';
   
-  metodoPago = '';
-  mostrarFormulario = false;
-  nuevoItem: ItemCarrito = { producto: '', cantidad: 1, precio: 0 };
-
-  // Pedidos del usuario actual
-  misPedidos: Pedido[] = [];
+  // Clientes únicos para filtro
+  clientesUnicos: string[] = [];
+  estadosDisponibles: string[] = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
+  metodosPago: string[] = ['efectivo', 'tarjeta'];
 
   constructor(
     private router: Router,
     private alertController: AlertController,
-    private toastController: ToastController,
-    private carritoService: CarritoService  // Inyectar el servicio
+    private toastController: ToastController
   ) {}
 
   ngOnInit() {
     this.cargarUsuarioActual();
-    this.cargarDatos();
-    this.cargarCarrito();
-    
-    // Suscribirse a cambios del carrito compartido
-    this.carritoSubscription = this.carritoService.carrito$.subscribe(
-      carrito => {
-        this.carritoCompartido = carrito;
-      }
-    );
+    this.verificarPermisos();
     
     if (this.esAdmin) {
+      this.cargarComprasRealizadas();
       this.obtenerClientesUnicos();
-      this.filtrarPedidos();
-    } else {
-      this.cargarMisPedidos();
+      this.filtrarCompras();
     }
   }
 
   ngOnDestroy() {
-    // Limpiar suscripción para evitar memory leaks
-    if (this.carritoSubscription) {
-      this.carritoSubscription.unsubscribe();
-    }
+    // Implementar limpieza si es necesario
   }
 
   cargarUsuarioActual() {
-    const userData = localStorage.getItem('usuarioActual');
+    const userData = localStorage.getItem('userData');
     if (userData) {
       try {
         this.usuarioActual = JSON.parse(userData);
         this.esAdmin = this.usuarioActual.rol === 'admin';
       } catch (error) {
         console.error('Error al parsear datos del usuario:', error);
-        this.crearUsuarioPorDefecto();
+        this.redirigirALogin();
       }
     } else {
-      this.crearUsuarioPorDefecto();
+      this.redirigirALogin();
     }
   }
 
-  crearUsuarioPorDefecto() {
-    this.usuarioActual = {
-      id: 'user_' + Date.now(),
-      nombre: 'Usuario Demo',
-      email: 'demo@email.com',
-      rol: 'usuario'
-    };
-    this.esAdmin = false;
-    
-    localStorage.setItem('usuarioActual', JSON.stringify(this.usuarioActual));
-    this.mostrarToast('Sesión iniciada como usuario demo', 'info');
+  verificarPermisos() {
+    if (!this.esAdmin) {
+      this.mostrarToast('Acceso denegado. Solo administradores pueden ver esta página.', 'danger');
+      this.router.navigate(['/home']);
+    }
   }
 
-  cargarDatos() {
-    const pedidosData = localStorage.getItem('pedidos');
-    if (pedidosData) {
+  cargarComprasRealizadas() {
+    const comprasData = localStorage.getItem('compras_realizadas');
+    if (comprasData) {
       try {
-        this.pedidos = JSON.parse(pedidosData);
+        this.comprasRealizadas = JSON.parse(comprasData);
+        console.log('Compras cargadas:', this.comprasRealizadas);
       } catch (error) {
-        console.error('Error al cargar pedidos:', error);
-        this.pedidos = [];
-      }
-    }
-
-    const clientesData = localStorage.getItem('clientes');
-    if (clientesData) {
-      try {
-        this.clientes = JSON.parse(clientesData);
-      } catch (error) {
-        console.error('Error al cargar clientes:', error);
-        this.clientes = [];
-      }
-    }
-
-    const productosData = localStorage.getItem('productos');
-    if (productosData) {
-      try {
-        this.productos = JSON.parse(productosData);
-      } catch (error) {
-        console.error('Error al cargar productos:', error);
-        this.productos = this.crearProductosPorDefecto();
+        console.error('Error al cargar compras realizadas:', error);
+        this.comprasRealizadas = [];
       }
     } else {
-      this.productos = this.crearProductosPorDefecto();
-      localStorage.setItem('productos', JSON.stringify(this.productos));
+      this.comprasRealizadas = [];
     }
-  }
-
-  crearProductosPorDefecto() {
-    return [
-      { id: 1, nombre: 'Red Bull Energy Drink 250ml', precio: 45, stock: 50 },
-      { id: 2, nombre: 'Monster Energy Original 473ml', precio: 35, stock: 30 },
-      { id: 3, nombre: 'Rockstar Energy Drink 500ml', precio: 45, stock: 25 },
-      { id: 4, nombre: 'Monster Ultra Zero 355ml', precio: 35, stock: 40 },
-      { id: 5, nombre: 'Prime Energy Drink 355ml', precio: 20, stock: 60 }
-    ];
-  }
-
-  cargarCarrito() {
-    const carritoData = localStorage.getItem(`carrito_${this.usuarioActual.id}`);
-    if (carritoData) {
-      try {
-        this.carrito = JSON.parse(carritoData);
-      } catch (error) {
-        console.error('Error al cargar carrito:', error);
-        this.carrito = [];
-      }
-    }
-  }
-
-  cargarMisPedidos() {
-    this.misPedidos = this.pedidos.filter(p => p.usuarioId === this.usuarioActual.id);
   }
 
   obtenerClientesUnicos() {
-    this.clientesUnicos = [...new Set(this.pedidos.map(p => p.cliente))];
+    this.clientesUnicos = [...new Set(this.comprasRealizadas.map(c => c.cliente))];
   }
 
-  filtrarPedidos() {
-    this.pedidosFiltrados = this.pedidos.filter(pedido => {
-      const cumpleEstado = !this.filtroEstado || pedido.estado === this.filtroEstado;
-      const cumpleCliente = !this.filtroCliente || pedido.cliente === this.filtroCliente;
-      return cumpleEstado && cumpleCliente;
+  filtrarCompras() {
+    this.comprasFiltradas = this.comprasRealizadas.filter(compra => {
+      const cumpleEstado = !this.filtroEstado || compra.estado === this.filtroEstado;
+      const cumpleCliente = !this.filtroCliente || compra.cliente === this.filtroCliente;
+      const cumpleMetodoPago = !this.filtroMetodoPago || compra.metodoPago === this.filtroMetodoPago;
+      
+      return cumpleEstado && cumpleCliente && cumpleMetodoPago;
     });
   }
 
-  actualizarPrecioProducto() {
-    const producto = this.productos.find(p => p.nombre === this.nuevoItem.producto);
-    if (producto) {
-      this.nuevoItem.precio = producto.precio;
-    }
-  }
-
-  obtenerStockMaximo(): number {
-    const producto = this.productos.find(p => p.nombre === this.nuevoItem.producto);
-    return producto ? producto.stock : 1;
-  }
-
-  async editarCantidad(index: number) {
-    const item = this.carrito[index];
-    const producto = this.productos.find(p => p.nombre === item.producto);
+  async verDetallesCompra(compra: CompraRealizada) {
+    let mensaje = `Compra #${compra.id}\n\n`;
+    mensaje += `Cliente: ${compra.cliente}\n`;
+    mensaje += `Usuario ID: ${compra.usuarioId}\n\n`;
     
-    const alert = await this.alertController.create({
-      header: 'Editar Cantidad',
-      message: `Stock disponible: ${producto?.stock || 0}`,
-      inputs: [
-        {
-          name: 'cantidad',
-          type: 'number',
-          value: item.cantidad,
-          min: 1,
-          max: producto?.stock || 1
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Actualizar',
-          handler: (data) => {
-            if (data.cantidad > 0 && data.cantidad <= (producto?.stock || 0)) {
-              item.cantidad = parseInt(data.cantidad);
-              this.guardarCarrito();
-              this.mostrarToast('Cantidad actualizada', 'success');
-            } else {
-              this.mostrarToast('Cantidad inválida', 'danger');
-            }
-          }
-        }
-      ]
+    mensaje += 'Productos:\n';
+    compra.productos.forEach(producto => {
+      mensaje += `• ${producto.nombre} x${producto.cantidad} - $${producto.precio} c/u = $${producto.subtotalProducto}\n`;
     });
-
-    await alert.present();
-  }
-
-  async verDetallesPedido(pedido: Pedido) {
-    let mensaje = `Pedido #${pedido.id}\n\n`;
     
-    if (pedido.productos && pedido.productos.length > 0) {
-      mensaje += 'Productos:\n';
-      pedido.productos.forEach(item => {
-        mensaje += `• ${item.producto} x${item.cantidad} - $${item.precio * item.cantidad}\n`;
-      });
-    } else {
-      mensaje += `Producto: ${pedido.producto}\n`;
+    mensaje += `\nSubtotal: $${compra.subtotal.toFixed(2)}`;
+    
+    if (compra.aplicaDescuento && compra.descuento > 0) {
+      mensaje += `\nDescuento aplicado: -$${compra.descuento.toFixed(2)}`;
     }
     
-    mensaje += `\nTotal: $${pedido.total}`;
-    mensaje += `\nMétodo de pago: ${pedido.metodoPago || 'No especificado'}`;
-    mensaje += `\nEstado: ${pedido.estado}`;
+    mensaje += `\nTotal pagado: $${compra.total.toFixed(2)}`;
+    mensaje += `\nMétodo de pago: ${compra.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Efectivo'}`;
+    mensaje += `\nFecha: ${new Date(compra.fecha).toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`;
+    mensaje += `\nEstado: ${compra.estado}`;
 
     const alert = await this.alertController.create({
-      header: 'Detalles del Pedido',
+      header: 'Detalles de la Compra',
       message: mensaje,
       buttons: ['OK']
     });
@@ -292,198 +182,17 @@ export class PedidosPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // MÉTODO ACTUALIZADO: Agregar al carrito (ahora usa el servicio compartido)
-  agregarAlCarrito() {
-    const producto = this.productos.find(p => p.nombre === this.nuevoItem.producto);
-    if (!producto) {
-      this.mostrarToast('Producto no encontrado', 'danger');
-      return;
-    }
-
-    if (this.nuevoItem.cantidad > producto.stock) {
-      this.mostrarToast(`Stock insuficiente. Disponible: ${producto.stock}`, 'warning');
-      return;
-    }
-
-    // Agregar al carrito local (página de pedidos)
-    const itemExistente = this.carrito.find(item => item.producto === this.nuevoItem.producto);
-    if (itemExistente) {
-      if (itemExistente.cantidad + this.nuevoItem.cantidad > producto.stock) {
-        this.mostrarToast(`Stock insuficiente. Disponible: ${producto.stock}`, 'warning');
-        return;
-      }
-      itemExistente.cantidad += this.nuevoItem.cantidad;
-    } else {
-      this.carrito.push({
-        producto: this.nuevoItem.producto,
-        cantidad: this.nuevoItem.cantidad,
-        precio: producto.precio
-      });
-    }
-
-    // NUEVO: También agregar al carrito compartido (página de productos)
-    const success = this.carritoService.agregarProducto({
-      id: producto.id,
-      nombre: producto.nombre,
-      precio: producto.precio,
-      cantidad: this.nuevoItem.cantidad
-    });
-
-    if (success) {
-      this.guardarCarrito();
-      this.mostrarToast('Producto agregado al carrito (sincronizado con página de productos)', 'success');
-      this.resetearFormulario();
-    } else {
-      this.mostrarToast('Error al agregar al carrito compartido', 'danger');
-    }
-  }
-
-  eliminarDelCarrito(index: number) {
-    const item = this.carrito[index];
-    
-    // Eliminar del carrito local
-    this.carrito.splice(index, 1);
-    this.guardarCarrito();
-    
-    // También eliminar del carrito compartido
-    const producto = this.productos.find(p => p.nombre === item.producto);
-    if (producto) {
-      this.carritoService.eliminarProducto(producto.id);
-    }
-    
-    this.mostrarToast('Producto eliminado del carrito', 'warning');
-  }
-
-  calcularTotal(): number {
-    return this.carrito.reduce((total, item) => total + (item.cantidad * item.precio), 0);
-  }
-
-  // NUEVO: Método para obtener el total del carrito compartido
-  calcularTotalCompartido(): number {
-    return this.carritoService.calcularTotal();
-  }
-
-  // NUEVO: Método para obtener la cantidad total del carrito compartido
-  obtenerCantidadTotalCompartida(): number {
-    return this.carritoService.obtenerCantidadTotal();
-  }
-
-  async realizarPedido() {
-    if (this.carrito.length === 0) {
-      this.mostrarToast('El carrito está vacío', 'warning');
-      return;
-    }
-
-    if (!this.metodoPago) {
-      this.mostrarToast('Selecciona un método de pago', 'warning');
-      return;
-    }
-
-    const alert = await this.alertController.create({
-      header: 'Confirmar Pedido',
-      message: `¿Confirmas el pedido por $${this.calcularTotal()}?`,
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Confirmar',
-          handler: () => {
-            this.procesarPedido();
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  procesarPedido() {
-    // Verificar stock antes de procesar
-    for (const item of this.carrito) {
-      const producto = this.productos.find(p => p.nombre === item.producto);
-      if (!producto || producto.stock < item.cantidad) {
-        this.mostrarToast(`Stock insuficiente para ${item.producto}`, 'danger');
-        return;
-      }
-    }
-
-    // Crear el pedido
-    const nuevoPedido: Pedido = {
-      id: Date.now(),
-      cliente: this.usuarioActual.nombre,
-      producto: this.carrito.map(item => item.producto).join(', '),
-      cantidad: this.carrito.reduce((total, item) => total + item.cantidad, 0),
-      fecha: new Date().toISOString(),
-      estado: 'Pendiente',
-      usuarioId: this.usuarioActual.id,
-      total: this.calcularTotal(),
-      metodoPago: this.metodoPago,
-      productos: [...this.carrito]
-    };
-
-    // Actualizar stock de productos
-    this.carrito.forEach(item => {
-      const producto = this.productos.find(p => p.nombre === item.producto);
-      if (producto) {
-        producto.stock -= item.cantidad;
-      }
-    });
-
-    // Guardar pedido
-    this.pedidos.push(nuevoPedido);
-    localStorage.setItem('pedidos', JSON.stringify(this.pedidos));
-    localStorage.setItem('productos', JSON.stringify(this.productos));
-
-    // Limpiar carritos (local y compartido)
-    this.carrito = [];
-    this.metodoPago = '';
-    this.guardarCarrito();
-    this.carritoService.vaciarCarrito();
-
-    // Actualizar mis pedidos
-    this.cargarMisPedidos();
-
-    this.mostrarToast('Pedido realizado con éxito', 'success');
-    this.mostrarFormulario = false;
-  }
-
-  // Métodos para admin (sin cambios)
-  async cambiarEstadoPedido(pedido: Pedido) {
+  async cambiarEstadoCompra(compra: CompraRealizada) {
     const alert = await this.alertController.create({
       header: 'Cambiar Estado',
-      message: `Pedido #${pedido.id} - ${pedido.cliente}`,
-      inputs: [
-        {
-          name: 'estado',
-          type: 'radio',
-          label: 'Pendiente',
-          value: 'Pendiente',
-          checked: pedido.estado === 'Pendiente'
-        },
-        {
-          name: 'estado',
-          type: 'radio',
-          label: 'Enviado',
-          value: 'Enviado',
-          checked: pedido.estado === 'Enviado'
-        },
-        {
-          name: 'estado',
-          type: 'radio',
-          label: 'Entregado',
-          value: 'Entregado',
-          checked: pedido.estado === 'Entregado'
-        },
-        {
-          name: 'estado',
-          type: 'radio',
-          label: 'Cancelado',
-          value: 'Cancelado',
-          checked: pedido.estado === 'Cancelado'
-        }
-      ],
+      message: `Compra #${compra.id} - ${compra.cliente}`,
+      inputs: this.estadosDisponibles.map(estado => ({
+        name: 'estado',
+        type: 'radio',
+        label: estado,
+        value: estado,
+        checked: compra.estado === estado
+      })),
       buttons: [
         {
           text: 'Cancelar',
@@ -493,9 +202,10 @@ export class PedidosPage implements OnInit, OnDestroy {
           text: 'Actualizar',
           handler: (data) => {
             if (data) {
-              pedido.estado = data;
-              this.guardarPedidos();
-              this.mostrarToast('Estado actualizado', 'success');
+              compra.estado = data;
+              this.guardarCompras();
+              this.filtrarCompras();
+              this.mostrarToast('Estado actualizado correctamente', 'success');
             }
           }
         }
@@ -505,10 +215,10 @@ export class PedidosPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  async eliminarPedidoAdmin(pedidoId: number) {
+  async eliminarCompra(compraId: number) {
     const alert = await this.alertController.create({
-      header: 'Eliminar Pedido',
-      message: '¿Estás seguro de que quieres eliminar este pedido?',
+      header: 'Eliminar Compra',
+      message: '¿Estás seguro de que quieres eliminar esta compra? Esta acción no se puede deshacer.',
       buttons: [
         {
           text: 'Cancelar',
@@ -517,10 +227,11 @@ export class PedidosPage implements OnInit, OnDestroy {
         {
           text: 'Eliminar',
           handler: () => {
-            this.pedidos = this.pedidos.filter(p => p.id !== pedidoId);
-            this.guardarPedidos();
-            this.filtrarPedidos();
-            this.mostrarToast('Pedido eliminado', 'success');
+            this.comprasRealizadas = this.comprasRealizadas.filter(c => c.id !== compraId);
+            this.guardarCompras();
+            this.filtrarCompras();
+            this.obtenerClientesUnicos();
+            this.mostrarToast('Compra eliminada correctamente', 'success');
           }
         }
       ]
@@ -529,28 +240,58 @@ export class PedidosPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Métodos auxiliares
-  guardarCarrito() {
-    localStorage.setItem(`carrito_${this.usuarioActual.id}`, JSON.stringify(this.carrito));
+  calcularTotalVentas(): number {
+    return this.comprasFiltradas.reduce((total, compra) => total + compra.total, 0);
   }
 
-  guardarPedidos() {
-    localStorage.setItem('pedidos', JSON.stringify(this.pedidos));
+  calcularTotalDescuentosAplicados(): number {
+    return this.comprasFiltradas
+      .filter(compra => compra.aplicaDescuento)
+      .reduce((total, compra) => total + compra.descuento, 0);
   }
 
-  resetearFormulario() {
-    this.nuevoItem = { producto: '', cantidad: 1, precio: 0 };
-    this.mostrarFormulario = false;
+  obtenerComprasPorEstado(estado: string): number {
+    return this.comprasFiltradas.filter(compra => compra.estado === estado).length;
   }
 
-  async mostrarToast(message: string, color: string) {
-    const toast = await this.toastController.create({
-      message,
-      duration: 2000,
-      color,
-      position: 'top'
-    });
-    await toast.present();
+  limpiarFiltros() {
+    this.filtroEstado = '';
+    this.filtroCliente = '';
+    this.filtroMetodoPago = '';
+    this.filtrarCompras();
+    this.mostrarToast('Filtros limpiados', 'medium');
+  }
+
+  exportarDatos() {
+    // Crear un resumen de las compras para exportar
+    const resumen = {
+      fechaExportacion: new Date().toISOString(),
+      totalCompras: this.comprasFiltradas.length,
+      ventasTotales: this.calcularTotalVentas(),
+      descuentosAplicados: this.calcularTotalDescuentosAplicados(),
+      compras: this.comprasFiltradas
+    };
+
+    const dataStr = JSON.stringify(resumen, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = `compras_${new Date().toISOString().split('T')[0]}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+
+    this.mostrarToast('Datos exportados correctamente', 'success');
+  }
+
+  private guardarCompras() {
+    localStorage.setItem('compras_realizadas', JSON.stringify(this.comprasRealizadas));
+  }
+
+  private redirigirALogin() {
+    this.mostrarToast('Sesión no válida. Redirigiendo al login...', 'warning');
+    this.router.navigate(['/login']);
   }
 
   async cerrarSesion() {
@@ -565,7 +306,11 @@ export class PedidosPage implements OnInit, OnDestroy {
         {
           text: 'Cerrar Sesión',
           handler: () => {
-            localStorage.removeItem('usuarioActual');
+            localStorage.removeItem('userData');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
             this.router.navigate(['/login']);
           }
         }
@@ -575,52 +320,21 @@ export class PedidosPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  async cambiarRolDemo() {
-    const alert = await this.alertController.create({
-      header: 'Cambiar Rol Demo',
-      message: 'Selecciona el rol para testing:',
-      inputs: [
-        {
-          name: 'rol',
-          type: 'radio',
-          label: 'Usuario Normal',
-          value: 'usuario',
-          checked: this.usuarioActual.rol === 'usuario'
-        },
-        {
-          name: 'rol',
-          type: 'radio',
-          label: 'Administrador',
-          value: 'admin',
-          checked: this.usuarioActual.rol === 'admin'
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Cambiar',
-          handler: (data) => {
-            if (data) {
-              this.usuarioActual.rol = data;
-              this.esAdmin = data === 'admin';
-              localStorage.setItem('usuarioActual', JSON.stringify(this.usuarioActual));
-              this.mostrarToast(`Rol cambiado a ${data}`, 'success');
-              
-              if (this.esAdmin) {
-                this.obtenerClientesUnicos();
-                this.filtrarPedidos();
-              } else {
-                this.cargarMisPedidos();
-              }
-            }
-          }
-        }
-      ]
-    });
+  irAProductos() {
+    this.router.navigate(['/productos']);
+  }
 
-    await alert.present();
+  irAHome() {
+    this.router.navigate(['/home']);
+  }
+
+  private async mostrarToast(message: string, color: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      color,
+      position: 'top'
+    });
+    await toast.present();
   }
 }

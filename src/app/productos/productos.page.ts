@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // Importar el servicio de carrito compartido
-import { CarritoService, ProductoCarrito } from '../services/carrito.service';
+import { CarritoService, ProductoCarrito, MetodoPago } from '../services/carrito.service';
 
 interface Producto {
   id: number;
@@ -30,22 +30,39 @@ interface Producto {
 })
 export class ProductosPage implements OnInit, OnDestroy {
   productos: Producto[] = [];
+  productosFiltrados: Producto[] = [];
   proveedores: any[] = [];
   carrito: ProductoCarrito[] = [];
   carritoSubscription?: Subscription;
   
+  // Funcionalidades existentes
   esAdmin: boolean = false;
   mostrarCarrito: boolean = false;
   mostrarFormulario: boolean = false;
   vistaActual: 'grid' | 'lista' = 'grid';
-
   nuevoProducto: Producto = this.crearProductoVacio();
+
+  // NUEVAS FUNCIONALIDADES
+  // Buscador
+  terminoBusqueda: string = '';
+  
+  // Sistema de pago
+  mostrarPago: boolean = false;
+  metodoPagoSeleccionado: MetodoPago | null = null;
+  
+  // Información de descuento
+  montoMinimoDescuento: number = 500;
+  porcentajeDescuento: number = 10;
 
   constructor(
     private toastController: ToastController,
     private router: Router,
-    private carritoService: CarritoService  // Inyectar el servicio compartido
-  ) {}
+    private carritoService: CarritoService
+  ) {
+    // Obtener configuración de descuentos del servicio
+    this.montoMinimoDescuento = this.carritoService.obtenerMontoMinimoDescuento();
+    this.porcentajeDescuento = this.carritoService.obtenerPorcentajeDescuento();
+  }
 
   ngOnInit() {
     this.crearUsuarioInvitadoSiNoExiste();
@@ -62,7 +79,6 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Limpiar suscripción para evitar memory leaks
     if (this.carritoSubscription) {
       this.carritoSubscription.unsubscribe();
     }
@@ -159,6 +175,9 @@ export class ProductosPage implements OnInit, OnDestroy {
       ];
       this.guardarEnLocalStorage();
     }
+    
+    // Inicializar productos filtrados
+    this.productosFiltrados = [...this.productos];
   }
 
   cargarProveedores() {
@@ -168,6 +187,182 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
+  // NUEVOS MÉTODOS PARA EL BUSCADOR
+  buscarProductos() {
+    if (!this.terminoBusqueda.trim()) {
+      this.productosFiltrados = [...this.productos];
+      return;
+    }
+
+    const termino = this.terminoBusqueda.toLowerCase().trim();
+    this.productosFiltrados = this.productos.filter(producto =>
+      producto.nombre.toLowerCase().includes(termino) ||
+      producto.descripcion.toLowerCase().includes(termino) ||
+      producto.categoria.toLowerCase().includes(termino) ||
+      producto.proveedor.toLowerCase().includes(termino)
+    );
+
+    if (this.productosFiltrados.length === 0) {
+      this.mostrarToast(`No se encontraron productos con "${this.terminoBusqueda}"`, 'warning');
+    }
+  }
+
+  limpiarBusqueda() {
+    this.terminoBusqueda = '';
+    this.productosFiltrados = [...this.productos];
+    this.mostrarToast('Búsqueda limpiada', 'medium');
+  }
+
+  // NUEVOS MÉTODOS PARA EL SISTEMA DE PAGO
+  mostrarOpcionesPago() {
+    if (this.carrito.length === 0) {
+      this.mostrarToast('El carrito está vacío', 'warning');
+      return;
+    }
+    this.mostrarPago = true;
+  }
+
+  cerrarPago() {
+    this.mostrarPago = false;
+    this.metodoPagoSeleccionado = null;
+  }
+
+  seleccionarMetodoPago(metodo: MetodoPago) {
+    this.metodoPagoSeleccionado = metodo;
+  }
+
+  // MÉTODO CORREGIDO: confirmarCompra con guardado para panel de admin
+  async confirmarCompra() {
+    if (!this.metodoPagoSeleccionado) {
+      this.mostrarToast('Por favor selecciona un método de pago', 'warning');
+      return;
+    }
+
+    const resultado = this.carritoService.procesarCompra(this.metodoPagoSeleccionado);
+    
+    if (!resultado.exito) {
+      this.mostrarToast(resultado.mensaje, 'danger');
+      return;
+    }
+
+    // Reducir el stock de los productos
+    this.carrito.forEach(item => {
+      const producto = this.productos.find(p => p.id === item.id);
+      if (producto) {
+        producto.stock -= item.cantidad;
+      }
+    });
+    
+    this.guardarEnLocalStorage();
+    
+    // Actualizar productos filtrados si hay búsqueda activa
+    this.buscarProductos();
+    
+    // NUEVO: Guardar la compra para el panel de administración
+    this.guardarCompraRealizada(resultado.resumen!);
+    
+    // Vaciar carrito
+    this.carritoService.vaciarCarrito();
+    
+    // Cerrar interfaces
+    this.cerrarPago();
+    this.mostrarCarrito = false;
+    
+    // Mostrar mensaje de éxito con detalles
+    const resumen = resultado.resumen!;
+    let mensaje = `¡Compra exitosa!`;
+    
+    if (resumen.aplicaDescuento) {
+      mensaje += ` Se aplicó descuento del ${this.porcentajeDescuento}% (Ahorraste $${resumen.descuento.toFixed(2)})`;
+    }
+    
+    mensaje += ` Total pagado: $${resumen.total.toFixed(2)} - Método: ${resumen.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Efectivo'}`;
+    
+    this.mostrarToast(mensaje, 'success');
+  }
+
+  // NUEVO: Método para guardar compra en el panel de administración
+  private guardarCompraRealizada(resumen: any) {
+    // Obtener datos del usuario actual
+    const userData = localStorage.getItem('userData');
+    let nombreCliente = 'Usuario Invitado';
+    let usuarioId = 'guest-user';
+    
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        nombreCliente = user.nombre || 'Usuario Anónimo';
+        usuarioId = user.id || 'anonymous-' + Date.now();
+      } catch (error) {
+        console.error('Error al obtener datos del usuario:', error);
+      }
+    }
+
+    // Crear el objeto de compra para el panel de admin
+    const compraRealizada = {
+      id: Date.now(),
+      cliente: nombreCliente,
+      usuarioId: usuarioId,
+      productos: this.carrito.map(item => ({
+        id: item.id,
+        nombre: item.nombre,
+        precio: item.precio,
+        cantidad: item.cantidad,
+        subtotalProducto: item.total
+      })),
+      subtotal: resumen.subtotal,
+      descuento: resumen.descuento,
+      total: resumen.total,
+      metodoPago: resumen.metodoPago,
+      fecha: new Date().toISOString(),
+      estado: 'Pendiente',
+      aplicaDescuento: resumen.aplicaDescuento
+    };
+
+    // Obtener compras existentes
+    const comprasExistentes = localStorage.getItem('compras_realizadas');
+    let compras = [];
+    
+    if (comprasExistentes) {
+      try {
+        compras = JSON.parse(comprasExistentes);
+      } catch (error) {
+        console.error('Error al parsear compras existentes:', error);
+        compras = [];
+      }
+    }
+    
+    // Agregar la nueva compra
+    compras.push(compraRealizada);
+    
+    // Guardar en localStorage
+    localStorage.setItem('compras_realizadas', JSON.stringify(compras));
+    
+    console.log('Compra guardada para panel de administración:', compraRealizada);
+  }
+
+  // MÉTODOS ACTUALIZADOS PARA USAR EL SERVICIO
+  calcularSubtotal(): number {
+    return this.carritoService.calcularSubtotal();
+  }
+
+  calcularDescuento(): number {
+    return this.carritoService.calcularDescuento();
+  }
+
+  calcularTotalCarrito(): number {
+    return this.carritoService.calcularTotal();
+  }
+
+  aplicaDescuento(): boolean {
+    return this.carritoService.aplicaDescuento();
+  }
+
+  obtenerCantidadTotal(): number {
+    return this.carritoService.obtenerCantidadTotal();
+  }
+
+  // MÉTODOS EXISTENTES (sin cambios significativos)
   crearProductoVacio(): Producto {
     return {
       id: 0,
@@ -182,12 +377,10 @@ export class ProductosPage implements OnInit, OnDestroy {
     };
   }
 
-  // Método para cambiar vista
   cambiarVista(vista: 'grid' | 'lista') {
     this.vistaActual = vista;
   }
 
-  // Método para ADMIN - Guardar producto
   guardarProducto() {
     if (!this.esAdmin) {
       this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
@@ -206,12 +399,10 @@ export class ProductosPage implements OnInit, OnDestroy {
       p.proveedor
     ) {
       if (p.id === 0) {
-        // Nuevo producto
         p.id = this.productos.length > 0 ? Math.max(...this.productos.map(x => x.id)) + 1 : 1;
         this.productos.push({ ...p });
         this.mostrarToast('Producto agregado exitosamente', 'success');
       } else {
-        // Edición de producto existente
         const index = this.productos.findIndex(prod => prod.id === p.id);
         if (index > -1) {
           this.productos[index] = { ...p };
@@ -220,6 +411,7 @@ export class ProductosPage implements OnInit, OnDestroy {
       }
 
       this.guardarEnLocalStorage();
+      this.buscarProductos(); // Actualizar productos filtrados
       this.mostrarFormulario = false;
       this.resetearFormulario();
     } else {
@@ -227,35 +419,41 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
-  // Método para ADMIN - Editar producto
   editarProducto(index: number) {
     if (!this.esAdmin) {
       this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
       return;
     }
 
-    this.nuevoProducto = { ...this.productos[index] };
+    // Buscar el producto en la lista original (no filtrada)
+    const producto = this.productosFiltrados[index];
+    this.nuevoProducto = { ...producto };
     this.mostrarFormulario = true;
   }
 
-  // Método para ADMIN - Eliminar producto
   eliminarProducto(index: number) {
     if (!this.esAdmin) {
       this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
       return;
     }
 
-    const confirmado = confirm(`¿Eliminar el producto "${this.productos[index].nombre}"?`);
+    const producto = this.productosFiltrados[index];
+    const confirmado = confirm(`¿Eliminar el producto "${producto.nombre}"?`);
+    
     if (confirmado) {
-      this.productos.splice(index, 1);
-      this.guardarEnLocalStorage();
-      this.resetearFormulario();
-      this.mostrarFormulario = false;
-      this.mostrarToast('Producto eliminado exitosamente', 'success');
+      // Encontrar el índice en la lista original
+      const indiceOriginal = this.productos.findIndex(p => p.id === producto.id);
+      if (indiceOriginal > -1) {
+        this.productos.splice(indiceOriginal, 1);
+        this.guardarEnLocalStorage();
+        this.buscarProductos(); // Actualizar productos filtrados
+        this.resetearFormulario();
+        this.mostrarFormulario = false;
+        this.mostrarToast('Producto eliminado exitosamente', 'success');
+      }
     }
   }
 
-  // MÉTODO ACTUALIZADO: Agregar al carrito usando el servicio compartido
   agregarAlCarrito(producto: Producto) {
     if (this.esAdmin) {
       this.mostrarToast('Los administradores no pueden agregar productos al carrito', 'warning');
@@ -267,7 +465,6 @@ export class ProductosPage implements OnInit, OnDestroy {
       return;
     }
 
-    // Usar el servicio compartido para agregar al carrito
     const success = this.carritoService.agregarProducto({
       id: producto.id,
       nombre: producto.nombre,
@@ -282,7 +479,6 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
-  // MÉTODOS ACTUALIZADOS: Gestión del carrito usando el servicio compartido
   aumentarCantidad(productoId: number) {
     const item = this.carrito.find(c => c.id === productoId);
     if (item) {
@@ -324,47 +520,15 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
-  // MÉTODOS ACTUALIZADOS: Usar el servicio para cálculos
-  calcularTotalCarrito(): number {
-    return this.carritoService.calcularTotal();
-  }
-
-  obtenerCantidadTotal(): number {
-    return this.carritoService.obtenerCantidadTotal();
-  }
-
+  // MÉTODO ACTUALIZADO (reemplaza procederCompra)
   procederCompra() {
-    if (this.carrito.length === 0) {
-      this.mostrarToast('El carrito está vacío', 'warning');
-      return;
-    }
-    
-    const total = this.calcularTotalCarrito();
-    const confirmado = confirm(`¿Proceder con la compra por un total de ${total}?`);
-    
-    if (confirmado) {
-      // Reducir el stock de los productos
-      this.carrito.forEach(item => {
-        const producto = this.productos.find(p => p.id === item.id);
-        if (producto) {
-          producto.stock -= item.cantidad;
-        }
-      });
-      
-      this.guardarEnLocalStorage();
-      this.carritoService.vaciarCarrito();
-      this.mostrarToast('¡Compra realizada exitosamente!', 'success');
-    }
+    this.mostrarOpcionesPago();
   }
 
-  // NUEVO: Método para sincronizar con el carrito de pedidos
   sincronizarConPedidos() {
-    // Este método podría usarse si necesitas hacer alguna sincronización especial
-    // Por ahora, la sincronización es automática gracias al servicio compartido
     this.mostrarToast('Carrito sincronizado con página de pedidos', 'info');
   }
 
-  // NUEVO: Método para ir a la página de pedidos
   irAPedidos() {
     this.router.navigate(['/pedidos']);
   }

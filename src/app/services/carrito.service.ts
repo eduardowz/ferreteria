@@ -9,12 +9,14 @@ export interface ProductoCarrito {
   total: number;
 }
 
-export interface CalculoTotal {
+export interface ResumenCompra {
   subtotal: number;
   descuento: number;
   total: number;
   aplicaDescuento: boolean;
 }
+
+export type MetodoPago = 'efectivo' | 'tarjeta';
 
 @Injectable({
   providedIn: 'root'
@@ -25,10 +27,10 @@ export class CarritoService {
   
   // Observable para que las páginas puedan suscribirse a cambios
   carrito$ = this.carritoSubject.asObservable();
-
+  
   // Configuración de descuentos
-  private readonly DESCUENTO_PORCENTAJE = 0.10; // 10%
-  private readonly MONTO_MINIMO_DESCUENTO = 500; // $500 MXN
+  private readonly MONTO_MINIMO_DESCUENTO = 500;
+  private readonly PORCENTAJE_DESCUENTO = 0.10; // 10%
 
   constructor() {
     this.cargarCarrito();
@@ -64,7 +66,7 @@ export class CarritoService {
     
     // Verificar si el producto ya está en el carrito
     const productoExistente = carritoActual.find(item => 
-      item.id === id || item.nombre === producto.nombre
+      item.id === id || item.nombre === producto.nombre 
     );
     
     if (productoExistente) {
@@ -82,7 +84,7 @@ export class CarritoService {
       };
       carritoActual.push(nuevoItem);
     }
-
+    
     this.guardarCarrito(carritoActual);
     return true;
   }
@@ -112,48 +114,102 @@ export class CarritoService {
     this.guardarCarrito([]);
   }
 
-  // Método simple para obtener solo el subtotal
-  calcularTotal(): number {
+  // NUEVOS MÉTODOS PARA CÁLCULOS CON DESCUENTO
+
+  calcularSubtotal(): number {
     return this.obtenerCarrito().reduce((total, item) => total + item.total, 0);
   }
 
-  // NUEVO: Método completo para calcular totales con descuentos
-  calcularTotalConDescuento(metodoPago?: string): CalculoTotal {
-    const subtotal = this.calcularTotal();
-    const aplicaDescuento = subtotal >= this.MONTO_MINIMO_DESCUENTO;
-    const descuento = aplicaDescuento ? subtotal * this.DESCUENTO_PORCENTAJE : 0;
-    const total = subtotal - descuento;
+  aplicaDescuento(): boolean {
+    return this.calcularSubtotal() >= this.MONTO_MINIMO_DESCUENTO;
+  }
 
+  calcularDescuento(): number {
+    if (this.aplicaDescuento()) {
+      return this.calcularSubtotal() * this.PORCENTAJE_DESCUENTO;
+    }
+    return 0;
+  }
+
+  calcularTotal(): number {
+    const subtotal = this.calcularSubtotal();
+    const descuento = this.calcularDescuento();
+    return subtotal - descuento;
+  }
+
+  obtenerResumenCompra(): ResumenCompra {
+    const subtotal = this.calcularSubtotal();
+    const descuento = this.calcularDescuento();
+    const aplicaDescuento = this.aplicaDescuento();
+    
     return {
       subtotal,
       descuento,
-      total,
+      total: subtotal - descuento,
       aplicaDescuento
     };
-  }
-
-  // NUEVO: Verificar si aplica descuento
-  aplicaDescuento(): boolean {
-    return this.calcularTotal() >= this.MONTO_MINIMO_DESCUENTO;
-  }
-
-  // NUEVO: Obtener el monto mínimo para descuento
-  obtenerMontoMinimoDescuento(): number {
-    return this.MONTO_MINIMO_DESCUENTO;
-  }
-
-  // NUEVO: Obtener porcentaje de descuento
-  obtenerPorcentajeDescuento(): number {
-    return this.DESCUENTO_PORCENTAJE * 100; // Retorna como porcentaje (10)
   }
 
   obtenerCantidadTotal(): number {
     return this.obtenerCarrito().reduce((total, item) => total + item.cantidad, 0);
   }
 
-  // NUEVO: Validar método de pago
-  validarMetodoPago(metodoPago: string): boolean {
-    const metodosValidos = ['efectivo', 'tarjeta'];
-    return metodosValidos.includes(metodoPago.toLowerCase());
+  // NUEVOS MÉTODOS PARA VALIDACIÓN DE COMPRA
+
+  validarCompra(metodoPago: MetodoPago): { valida: boolean, mensaje: string } {
+    const carrito = this.obtenerCarrito();
+    
+    if (carrito.length === 0) {
+      return { valida: false, mensaje: 'El carrito está vacío' };
+    }
+
+    if (!metodoPago) {
+      return { valida: false, mensaje: 'Debe seleccionar un método de pago' };
+    }
+
+    return { valida: true, mensaje: 'Compra válida' };
+  }
+
+  procesarCompra(metodoPago: MetodoPago): { 
+    exito: boolean, 
+    mensaje: string, 
+    resumen?: ResumenCompra & { metodoPago: MetodoPago } 
+  } {
+    const validacion = this.validarCompra(metodoPago);
+    
+    if (!validacion.valida) {
+      return { exito: false, mensaje: validacion.mensaje };
+    }
+
+    const resumen = this.obtenerResumenCompra();
+    
+    // Aquí podrías agregar lógica adicional según el método de pago
+    // Por ejemplo, validaciones específicas para tarjeta, etc.
+    
+    return {
+      exito: true,
+      mensaje: 'Compra procesada exitosamente',
+      resumen: {
+        ...resumen,
+        metodoPago
+      }
+    };
+  }
+
+  // MÉTODOS DE UTILIDAD
+
+  obtenerMontoMinimoDescuento(): number {
+    return this.MONTO_MINIMO_DESCUENTO;
+  }
+
+  obtenerPorcentajeDescuento(): number {
+    return this.PORCENTAJE_DESCUENTO * 100; // Retorna como porcentaje
+  }
+
+  formatearPrecio(precio: number): string {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(precio);
   }
 }

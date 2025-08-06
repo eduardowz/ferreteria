@@ -1,16 +1,15 @@
 <ion-header>
-  <ion-toolbar color="medium" class="header-toolbar">
+  <ion-toolbar color="primary" class="header-toolbar">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home" class="back-button" text=""></ion-back-button>
     </ion-buttons>
     <ion-title class="ion-text-center page-title">
-      <span class="title-icon">{{ esAdmin ? '📋' : '🛒' }}</span>
-      {{ esAdmin ? 'Gestión de Pedidos' : 'Mi Carrito' }}
+      <span class="title-icon">📋</span>
+      Gestión de Pedidos - Admin
     </ion-title>
     <ion-buttons slot="end">
-      <!-- Botón para cambiar rol (solo para demo/testing) -->
-      <ion-button fill="clear" (click)="cambiarRolDemo()" class="demo-button">
-        <span class="action-emoji">🔄</span>
+      <ion-button fill="clear" (click)="irAProductos()" class="nav-button">
+        <span class="action-emoji">🛍️</span>
       </ion-button>
       <ion-button fill="clear" (click)="cerrarSesion()" class="logout-button">
         <span class="action-emoji">🚪</span>
@@ -19,192 +18,247 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding order-content">
-  <!-- Información del usuario actual -->
-  <ion-card class="user-info-card">
+<ion-content class="ion-padding admin-content">
+  <!-- Información del administrador -->
+  <ion-card class="admin-info-card">
     <ion-card-content>
-      <p><span class="emoji-icon">👤</span> Usuario: {{ usuarioActual.nombre }}</p>
-      <p><span class="emoji-icon">🎭</span> Rol: {{ esAdmin ? 'Administrador' : 'Usuario' }}</p>
+      <div class="admin-header">
+        <div class="admin-details">
+          <p><span class="emoji-icon">👤</span> Administrador: {{ usuarioActual.nombre }}</p>
+          <p><span class="emoji-icon">📧</span> Email: {{ usuarioActual.email }}</p>
+        </div>
+        <div class="admin-stats">
+          <div class="stat-item">
+            <span class="stat-number">{{ comprasFiltradas.length }}</span>
+            <span class="stat-label">Pedidos</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${{ calcularTotalVentas().toFixed(2) }}</span>
+            <span class="stat-label">Ventas Total</span>
+          </div>
+        </div>
+      </div>
     </ion-card-content>
   </ion-card>
 
-  <!-- Vista de Administrador -->
-  <div *ngIf="esAdmin">
-    <!-- Filtros para admin -->
-    <ion-card class="filter-card">
-      <ion-card-header>
-        <ion-card-title class="filter-title">
-          <span class="emoji-icon">🔍</span>
-          Filtros
-        </ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-item>
-          <ion-label>Estado</ion-label>
-          <ion-select [(ngModel)]="filtroEstado" (ionChange)="filtrarPedidos()">
-            <ion-select-option value="">Todos</ion-select-option>
-            <ion-select-option value="Pendiente">Pendiente</ion-select-option>
-            <ion-select-option value="Enviado">Enviado</ion-select-option>
-            <ion-select-option value="Entregado">Entregado</ion-select-option>
-            <ion-select-option value="Cancelado">Cancelado</ion-select-option>
-          </ion-select>
-        </ion-item>
-        <ion-item>
-          <ion-label>Cliente</ion-label>
-          <ion-select [(ngModel)]="filtroCliente" (ionChange)="filtrarPedidos()">
-            <ion-select-option value="">Todos</ion-select-option>
-            <ion-select-option *ngFor="let cliente of clientesUnicos" [value]="cliente">{{cliente}}</ion-select-option>
-          </ion-select>
-        </ion-item>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Lista de pedidos para admin -->
-    <ion-card class="order-list-card">
-      <ion-card-header class="list-header">
-        <ion-card-title class="list-title">
-          <span class="emoji-icon">📋</span>
-          Pedidos del Sistema
-        </ion-card-title>
-        <ion-note class="order-count">{{pedidosFiltrados.length}} pedido(s)</ion-note>
-      </ion-card-header>
+  <!-- Filtros para administrador -->
+  <ion-card class="filter-card">
+    <ion-card-header>
+      <ion-card-title class="filter-title">
+        <span class="emoji-icon">🔍</span>
+        Filtros de Búsqueda
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label>Estado del Pedido</ion-label>
+        <ion-select [(ngModel)]="filtroEstado" (ionChange)="filtrarCompras()" placeholder="Todos los estados">
+          <ion-select-option value="">Todos</ion-select-option>
+          <ion-select-option *ngFor="let estado of estadosDisponibles" [value]="estado">
+            {{ estado }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
       
-      <ion-list lines="none" class="order-list">
-        <ion-item *ngFor="let p of pedidosFiltrados; let i = index" class="order-item">
-          <ion-avatar slot="start" class="order-avatar">
-            <span class="avatar-emoji">📝</span>
-          </ion-avatar>
-          
-          <ion-label class="order-info">
-            <h2 class="order-title">{{ p.cliente }} - Pedido #{{ p.id }}</h2>
-            <div class="order-details">
-              <p class="order-detail">
-                <span class="detail-emoji">👤</span>
-                Usuario: {{ p.usuarioId }}
-              </p>
-              <p class="order-detail" *ngIf="p.productos && p.productos.length > 0">
-                <span class="detail-emoji">📦</span>
-                Productos: {{ p.productos.length }} item(s)
-              </p>
-              <p class="order-detail" *ngIf="!p.productos || p.productos.length === 0">
-                <span class="detail-emoji">📦</span>
-                Producto: {{ p.producto }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">🔢</span>
-                Cantidad total: {{ p.cantidad }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">💰</span>
-                Total: ${{ p.total }}
-              </p>
-              <p class="order-detail" *ngIf="p.metodoPago">
-                <span class="detail-emoji">💳</span>
-                Pago: {{ p.metodoPago }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">📅</span>
-                {{ p.fecha | date:'medium' }}
-              </p>
-              <p class="order-detail">
-                <span class="detail-emoji">🔄</span>
-                Estado: 
-                <span class="status-badge" [class.status-pending]="p.estado === 'Pendiente'"
-                  [class.status-sent]="p.estado === 'Enviado'"
-                  [class.status-delivered]="p.estado === 'Entregado'"
-                  [class.status-cancelled]="p.estado === 'Cancelado'">
-                  {{ p.estado }}
-                </span>
-              </p>
-            </div>
-          </ion-label>
-          
-          <ion-buttons slot="end" class="action-buttons">
-            <ion-button fill="clear" color="medium" (click)="cambiarEstadoPedido(p)" class="edit-button">
-              <span class="action-emoji">🔄</span>
-            </ion-button>
-            <ion-button fill="clear" color="danger" (click)="eliminarPedidoAdmin(p.id)" class="delete-button">
-              <span class="action-emoji">🗑️</span>
-            </ion-button>
-          </ion-buttons>
-        </ion-item>
-      </ion-list>
-    </ion-card>
-  </div>
-
-  <!-- Vista de Usuario -->
-  <div *ngIf="!esAdmin">
-    <!-- Botón para agregar al carrito -->
-    <ion-button expand="block" color="medium" (click)="mostrarFormulario = !mostrarFormulario" class="toggle-form-button">
-      <span slot="start" class="emoji-icon">{{ mostrarFormulario ? '❌' : '➕' }}</span>
-      {{ mostrarFormulario ? 'Cancelar' : 'Agregar al Carrito' }}
-    </ion-button>
-
-    <!-- Formulario para agregar productos al carrito -->
-    <ion-card *ngIf="mostrarFormulario" class="form-card">
-      <ion-card-header class="form-header">
-        <ion-card-title class="form-title">
-          <span class="emoji-icon">🛒</span>
-          Agregar Producto
-        </ion-card-title>
-      </ion-card-header>
+      <ion-item>
+        <ion-label>Cliente</ion-label>
+        <ion-select [(ngModel)]="filtroCliente" (ionChange)="filtrarCompras()" placeholder="Todos los clientes">
+          <ion-select-option value="">Todos</ion-select-option>
+          <ion-select-option *ngFor="let cliente of clientesUnicos" [value]="cliente">
+            {{ cliente }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
       
-      <ion-card-content class="form-content">
-        <ion-item lines="full" class="form-item">
-          <ion-label position="stacked" class="select-label">
-            <span class="select-emoji">📦</span>
-            Producto
-          </ion-label>
-          <ion-select 
-            [(ngModel)]="nuevoItem.producto" 
-            placeholder="Selecciona un producto" 
-            class="custom-select"
-            (ionChange)="actualizarPrecioProducto()"
-          >
-            <ion-select-option *ngFor="let p of productos" [value]="p.nombre">
-              {{ p.nombre }} - ${{ p.precio }} (Stock: {{ p.stock }})
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
-
-        <ion-item lines="full" class="form-item">
-          <ion-label position="floating" class="input-label">
-            <span class="input-emoji">🔢</span>
-            Cantidad
-          </ion-label>
-          <ion-input 
-            type="number" 
-            [(ngModel)]="nuevoItem.cantidad" 
-            min="1" 
-            [max]="obtenerStockMaximo()"
-            class="custom-input"
-          ></ion-input>
-        </ion-item>
-
-        <div class="price-preview" *ngIf="nuevoItem.producto && nuevoItem.cantidad > 0">
-          <p><span class="emoji-icon">💰</span> Precio unitario: ${{ nuevoItem.precio }}</p>
-          <p><span class="emoji-icon">💵</span> Subtotal: ${{ nuevoItem.precio * nuevoItem.cantidad }}</p>
-        </div>
-
-        <ion-button 
-          expand="block" 
-          color="medium" 
-          (click)="agregarAlCarrito()" 
-          class="submit-button"
-          [disabled]="!nuevoItem.producto || !nuevoItem.cantidad || nuevoItem.cantidad <= 0"
-        >
-          <span slot="start" class="emoji-icon">🛒</span>
-          Agregar al Carrito
+      <ion-item>
+        <ion-label>Método de Pago</ion-label>
+        <ion-select [(ngModel)]="filtroMetodoPago" (ionChange)="filtrarCompras()" placeholder="Todos los métodos">
+          <ion-select-option value="">Todos</ion-select-option>
+          <ion-select-option value="efectivo">Efectivo</ion-select-option>
+          <ion-select-option value="tarjeta">Tarjeta</ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <div class="filter-actions">
+        <ion-button expand="block" fill="outline" color="medium" (click)="limpiarFiltros()">
+          <span slot="start" class="emoji-icon">🧹</span>
+          Limpiar Filtros
         </ion-button>
-      </ion-card-content>
-    </ion-card>
+        <ion-button expand="block" color="success" (click)="exportarDatos()">
+          <span slot="start" class="emoji-icon">📊</span>
+          Exportar Datos
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
 
-    <!-- Carrito -->
-    <ion-card class="cart-card" *ngIf="carrito.length > 0">
-      <ion-card-header class="list-header">
-        <ion-card-title class="list-title">
-          <span class="emoji-icon">🛒</span>
-          Mi Carrito
-        </ion-card-title>
-        <ion-note class="order-count">{{carrito.length}} producto(s)</ion-note>
-      </ion-card-header>
+  <!-- Estadísticas rápidas -->
+  <ion-card class="stats-card" *ngIf="comprasFiltradas.length > 0">
+    <ion-card-header>
+      <ion-card-title>
+        <span class="emoji-icon">📊</span>
+        Estadísticas Rápidas
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-emoji">⏳</span>
+          <span class="stat-count">{{ obtenerComprasPorEstado('Pendiente') }}</span>
+          <span class="stat-title">Pendientes</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-emoji">🚚</span>
+          <span class="stat-count">{{ obtenerComprasPorEstado('Enviado') }}</span>
+          <span class="stat-title">Enviados</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-emoji">✅</span>
+          <span class="stat-count">{{ obtenerComprasPorEstado('Entregado') }}</span>
+          <span class="stat-title">Entregados</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-emoji">🎁</span>
+          <span class="stat-count">${{ calcularTotalDescuentosAplicados().toFixed(2) }}</span>
+          <span class="stat-title">Descuentos</span>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Lista de pedidos/compras -->
+  <ion-card class="orders-list-card">
+    <ion-card-header class="list-header">
+      <ion-card-title class="list-title">
+        <span class="emoji-icon">📦</span>
+        Pedidos Realizados desde Productos
+      </ion-card-title>
+      <ion-note class="order-count">
+        {{ comprasFiltradas.length }} pedido(s) 
+        <span *ngIf="comprasRealizadas.length !== comprasFiltradas.length">
+          de {{ comprasRealizadas.length }} total
+        </span>
+      </ion-note>
+    </ion-card-header>
+    
+    <!-- Mensaje cuando no hay pedidos -->
+    <ion-card-content *ngIf="comprasFiltradas.length === 0" class="empty-state">
+      <div class="empty-content">
+        <span class="empty-emoji">📭</span>
+        <h3>No hay pedidos</h3>
+        <p *ngIf="comprasRealizadas.length === 0">
+          Aún no se han realizado compras desde la página de productos
+        </p>
+        <p *ngIf="comprasRealizadas.length > 0">
+          No hay pedidos que coincidan con los filtros seleccionados
+        </p>
+        <ion-button *ngIf="comprasRealizadas.length > 0" fill="outline" (click)="limpiarFiltros()">
+          <span slot="start" class="emoji-icon">🔄</span>
+          Ver Todos los Pedidos
+        </ion-button>
+      </div>
+    </ion-card-content>
+    
+    <!-- Lista de pedidos -->
+    <ion-list *ngIf="comprasFiltradas.length > 0" lines="none" class="orders-list">
+      <ion-item *ngFor="let compra of comprasFiltradas; let i = index" class="order-item">
+        <ion-avatar slot="start" class="order-avatar">
+          <span class="avatar-emoji">🛒</span>
+        </ion-avatar>
+        
+        <ion-label class="order-info">
+          <h2 class="order-title">
+            Pedido #{{ compra.id }} - {{ compra.cliente }}
+            <ion-badge 
+              class="status-badge" 
+              [color]="compra.estado === 'Entregado' ? 'success' : 
+                       compra.estado === 'Enviado' ? 'primary' : 
+                       compra.estado === 'Cancelado' ? 'danger' : 'warning'">
+              {{ compra.estado }}
+            </ion-badge>
+          </h2>
+          
+          <div class="order-details">
+            <p class="order-detail">
+              <span class="detail-emoji">👤</span>
+              Cliente: {{ compra.cliente }}
+            </p>
+            <p class="order-detail">
+              <span class="detail-emoji">🆔</span>
+              Usuario ID: {{ compra.usuarioId }}
+            </p>
+            <p class="order-detail">
+              <span class="detail-emoji">📦</span>
+              Productos: {{ compra.productos.length }} item(s)
+            </p>
+            <p class="order-detail">
+              <span class="detail-emoji">💰</span>
+              Subtotal: ${{ compra.subtotal.toFixed(2) }}
+              <span *ngIf="compra.aplicaDescuento" class="discount-text">
+                (Desc: -${{ compra.descuento.toFixed(2) }})
+              </span>
+            </p>
+            <p class="order-detail total-detail">
+              <span class="detail-emoji">💵</span>
+              <strong>Total: ${{ compra.total.toFixed(2) }}</strong>
+            </p>
+            <p class="order-detail">
+              <span class="detail-emoji">💳</span>
+              Pago: {{ compra.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Efectivo' }}
+            </p>
+            <p class="order-detail">
+              <span class="detail-emoji">📅</span>
+              {{ compra.fecha | date:'medium' }}
+            </p>
+            <p class="order-detail" *ngIf="compra.aplicaDescuento">
+              <span class="detail-emoji">🎉</span>
+              <span class="discount-applied">¡Descuento aplicado!</span>
+            </p>
+          </div>
+        </ion-label>
+        
+        <ion-buttons slot="end" class="action-buttons">
+          <ion-button fill="clear" color="primary" (click)="verDetallesCompra(compra)" class="detail-button">
+            <span class="action-emoji">👁️</span>
+          </ion-button>
+          <ion-button fill="clear" color="warning" (click)="cambiarEstadoCompra(compra)" class="edit-button">
+            <span class="action-emoji">🔄</span>
+          </ion-button>
+          <ion-button fill="clear" color="danger" (click)="eliminarCompra(compra.id)" class="delete-button">
+            <span class="action-emoji">🗑️</span>
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+
+  <!-- Información adicional para el administrador -->
+  <ion-card class="admin-help-card">
+    <ion-card-header>
+      <ion-card-title>
+        <span class="emoji-icon">ℹ️</span>
+        Información
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="help-content">
+        <p><strong>📋 Esta página muestra únicamente:</strong></p>
+        <ul>
+          <li>✅ Compras realizadas desde la página de Productos</li>
+          <li>✅ Pedidos con sistema de descuentos aplicado</li>
+          <li>✅ Información completa de cada transacción</li>
+        </ul>
+        
+        <p><strong>🛠️ Funciones disponibles:</strong></p>
+        <ul>
+          <li>🔍 Filtrar por estado, cliente o método de pago</li>
+          <li>📊 Ver estadísticas de ventas</li>
+          <li>🔄 Cambiar estado de pedidos</li>
+          <li>👁️ Ver detalles completos de cada compra</li>
+          <li>📋 Exportar datos para reportes</li>
+        </ul>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
