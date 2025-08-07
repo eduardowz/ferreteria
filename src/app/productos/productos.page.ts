@@ -21,6 +21,14 @@ interface Producto {
   image?: string;
 }
 
+interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  role: 'admin' | 'user';
+  rol: 'admin' | 'usuario';
+}
+
 @Component({
   selector: 'app-productos',
   templateUrl: './productos.page.html',
@@ -35,8 +43,17 @@ export class ProductosPage implements OnInit, OnDestroy {
   carrito: ProductoCarrito[] = [];
   carritoSubscription?: Subscription;
   
-  // Funcionalidades existentes
+  // Datos del usuario actual
+  usuarioActual: Usuario = { 
+    id: '', 
+    nombre: '', 
+    email: '', 
+    role: 'user' as const, 
+    rol: 'usuario' as const 
+  };
   esAdmin: boolean = false;
+  
+  // Funcionalidades existentes
   mostrarCarrito: boolean = false;
   mostrarFormulario: boolean = false;
   vistaActual: 'grid' | 'lista' = 'grid';
@@ -65,6 +82,7 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.cargarUsuarioActual();
     this.crearUsuarioInvitadoSiNoExiste();
     this.verificarRolUsuario();
     this.cargarProductos();
@@ -84,16 +102,46 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
+  // NUEVO: Cargar usuario actual con verificación mejorada
+  cargarUsuarioActual() {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        this.usuarioActual = {
+          id: user.id || '',
+          nombre: user.nombre || '',
+          email: user.email || '',
+          role: user.role || 'user',
+          rol: user.rol || 'usuario'
+        };
+        
+        console.log('Usuario cargado en productos:', this.usuarioActual);
+        console.log('Role:', user.role);
+        console.log('Rol:', user.rol);
+        
+      } catch (error) {
+        console.error('Error al parsear datos del usuario:', error);
+        this.crearUsuarioInvitadoSiNoExiste();
+      }
+    } else {
+      this.crearUsuarioInvitadoSiNoExiste();
+    }
+  }
+
   crearUsuarioInvitadoSiNoExiste() {
     const userData = localStorage.getItem('userData');
     if (!userData) {
-      const usuarioInvitado = {
+      const usuarioInvitado: Usuario = {
         email: 'invitado@tienda.com',
-        rol: 'usuario',
+        role: 'user' as const,
+        rol: 'usuario' as const,
         nombre: 'Usuario Invitado',
         id: 'guest-' + Date.now()
       };
       localStorage.setItem('userData', JSON.stringify(usuarioInvitado));
+      this.usuarioActual = usuarioInvitado;
+      console.log('Usuario invitado creado:', usuarioInvitado);
     }
   }
 
@@ -102,8 +150,18 @@ export class ProductosPage implements OnInit, OnDestroy {
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        this.esAdmin = user.rol === 'admin';
+        
+        // VERIFICACIÓN MEJORADA: Comprobar ambos campos de rol
+        this.esAdmin = (user.role === 'admin') || (user.rol === 'admin');
+        
+        console.log('Verificando rol en productos:');
+        console.log('User object:', user);
+        console.log('user.role:', user.role);
+        console.log('user.rol:', user.rol);
+        console.log('Es admin?:', this.esAdmin);
+        
       } catch (error) {
+        console.error('Error al verificar rol:', error);
         this.esAdmin = false;
       }
     } else {
@@ -283,20 +341,9 @@ export class ProductosPage implements OnInit, OnDestroy {
 
   // NUEVO: Método para guardar compra en el panel de administración
   private guardarCompraRealizada(resumen: any) {
-    // Obtener datos del usuario actual
-    const userData = localStorage.getItem('userData');
-    let nombreCliente = 'Usuario Invitado';
-    let usuarioId = 'guest-user';
-    
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        nombreCliente = user.nombre || 'Usuario Anónimo';
-        usuarioId = user.id || 'anonymous-' + Date.now();
-      } catch (error) {
-        console.error('Error al obtener datos del usuario:', error);
-      }
-    }
+    // Usar datos del usuario actual cargado
+    let nombreCliente = this.usuarioActual.nombre || 'Usuario Invitado';
+    let usuarioId = this.usuarioActual.id || 'guest-user';
 
     // Crear el objeto de compra para el panel de admin
     const compraRealizada = {
@@ -362,7 +409,7 @@ export class ProductosPage implements OnInit, OnDestroy {
     return this.carritoService.obtenerCantidadTotal();
   }
 
-  // MÉTODOS EXISTENTES (sin cambios significativos)
+  // MÉTODOS EXISTENTES (con verificaciones de permisos mejoradas)
   crearProductoVacio(): Producto {
     return {
       id: 0,
@@ -382,8 +429,11 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   guardarProducto() {
+    console.log('Intentando guardar producto. Es admin?:', this.esAdmin);
+    
     if (!this.esAdmin) {
       this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
+      console.log('Permisos denegados para guardar producto');
       return;
     }
 
@@ -420,20 +470,26 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   editarProducto(index: number) {
+    console.log('Intentando editar producto. Es admin?:', this.esAdmin);
+    
     if (!this.esAdmin) {
       this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
+      console.log('Permisos denegados para editar producto');
       return;
     }
 
-    // Buscar el producto en la lista original (no filtrada)
+    // Buscar el producto en la lista filtrada
     const producto = this.productosFiltrados[index];
     this.nuevoProducto = { ...producto };
     this.mostrarFormulario = true;
   }
 
   eliminarProducto(index: number) {
+    console.log('Intentando eliminar producto. Es admin?:', this.esAdmin);
+    
     if (!this.esAdmin) {
       this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
+      console.log('Permisos denegados para eliminar producto');
       return;
     }
 
@@ -455,8 +511,11 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   agregarAlCarrito(producto: Producto) {
+    console.log('Intentando agregar al carrito. Es admin?:', this.esAdmin);
+    
     if (this.esAdmin) {
       this.mostrarToast('Los administradores no pueden agregar productos al carrito', 'warning');
+      console.log('Admin intentó agregar producto al carrito');
       return;
     }
 
@@ -480,6 +539,11 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   aumentarCantidad(productoId: number) {
+    if (this.esAdmin) {
+      this.mostrarToast('Los administradores no pueden modificar el carrito', 'warning');
+      return;
+    }
+
     const item = this.carrito.find(c => c.id === productoId);
     if (item) {
       const producto = this.productos.find(p => p.id === productoId);
@@ -493,6 +557,11 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   disminuirCantidad(productoId: number) {
+    if (this.esAdmin) {
+      this.mostrarToast('Los administradores no pueden modificar el carrito', 'warning');
+      return;
+    }
+
     const item = this.carrito.find(c => c.id === productoId);
     if (item) {
       if (item.cantidad > 1) {
@@ -505,6 +574,11 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   eliminarDelCarrito(productoId: number) {
+    if (this.esAdmin) {
+      this.mostrarToast('Los administradores no pueden modificar el carrito', 'warning');
+      return;
+    }
+
     const item = this.carrito.find(c => c.id === productoId);
     if (item) {
       this.carritoService.eliminarProducto(productoId);
@@ -513,6 +587,11 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   vaciarCarrito() {
+    if (this.esAdmin) {
+      this.mostrarToast('Los administradores no pueden modificar el carrito', 'warning');
+      return;
+    }
+
     const confirmado = confirm('¿Estás seguro de que quieres vaciar el carrito?');
     if (confirmado) {
       this.carritoService.vaciarCarrito();
@@ -522,6 +601,10 @@ export class ProductosPage implements OnInit, OnDestroy {
 
   // MÉTODO ACTUALIZADO (reemplaza procederCompra)
   procederCompra() {
+    if (this.esAdmin) {
+      this.mostrarToast('Los administradores no pueden realizar compras', 'warning');
+      return;
+    }
     this.mostrarOpcionesPago();
   }
 

@@ -13,6 +13,8 @@
 </ion-header>
 
 <ion-content class="ion-padding content-background">
+
+
   <div class="hero-section">
     <div class="icon-container">
       <span class="main-emoji">🛠️</span>
@@ -23,7 +25,7 @@
     </p>
   </div>
 
-  <!-- Menú de opciones basado en rol - MOVIDO ARRIBA -->
+  <!-- Menú de opciones basado en rol -->
   <ion-card class="menu-card">
     <ion-card-header class="card-header">
       <ion-card-title class="card-title">
@@ -32,7 +34,7 @@
       <ion-card-subtitle class="card-subtitle">
         {{ isAdmin ? 'Gestión completa del sistema' : 'Consulta nuestros productos' }}
       </ion-card-subtitle>
-      <!-- Botón para cambiar rol (solo para pruebas - eliminar en producción) -->
+      <!-- Botón para cambiar rol (solo para pruebas) -->
       <ion-button 
         size="small" 
         fill="outline" 
@@ -60,7 +62,7 @@
       <div class="menu-grid" [ngClass]="{'admin-grid': isAdmin, 'user-grid': !isAdmin}">
         
         <!-- VISTA PARA ADMINISTRADOR -->
-        <div *ngIf="isAdmin" class="admin-menu-container">
+        <div *ngIf="isAdmin === true" class="admin-menu-container">
           <div class="menu-option">
             <div class="option-header">
               <span class="option-emoji client-emoji">👥</span>
@@ -107,7 +109,7 @@
         </div>
 
         <!-- VISTA PARA USUARIO NORMAL -->
-        <div *ngIf="!isAdmin" class="user-menu-container">
+        <div *ngIf="isAdmin === false" class="user-menu-container">
           <div class="menu-option">
             <div class="option-header">
               <span class="option-emoji product-emoji">📦</span>
@@ -139,7 +141,7 @@
     </ion-card-content>
   </ion-card>
 
-  <!-- Descripción de la ferretería - MOVIDO ABAJO -->
+  <!-- Descripción de la ferretería -->
   <ion-card class="info-card">
     <ion-card-header class="info-header">
       <ion-card-title class="info-title">
@@ -171,7 +173,7 @@
     </ion-card-content>
   </ion-card>
 
-  <!-- Mapa de ubicación - MOVIDO ABAJO -->
+  <!-- Mapa de ubicación -->
   <ion-card class="map-card">
     <ion-card-header class="map-header">
       <ion-card-title class="map-title">
@@ -182,9 +184,9 @@
     <ion-card-content class="map-content">
       <div class="mapa">
         <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.066597426538!2d-74.04317374676681!3d4.657803346860412!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNA!5e0!3m2!1ses!2sco!4v1234567890123"
-          allowfullscreen="">
-        </iframe>
+  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3452.3953710665214!2d-106.42440508488763!3d31.63520138132871!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x86de1925cc2cb0c5%3A0x506149c4dd7b046b!2sAv.%20Universidad%20Tecnol%C3%B3gica%203051%2C%20Lote%20Bravo%2C%2032695%20Cd%20Ju%C3%A1rez%2C%20Chih.!5e0!3m2!1ses!2smx!4v1723061345678" 
+  allowfullscreen="">
+</iframe>
         <p class="map-description">
           <strong>Cómo llegar a nuestra empresa:</strong> 
           Estamos ubicados en el corazón de la ciudad, cerca de todos los servicios.

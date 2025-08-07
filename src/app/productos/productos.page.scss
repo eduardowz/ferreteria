@@ -1,512 +1,542 @@
-// Estilos generales
-.product-content {
-  --background: #f5f5f5;
-  padding: 10px;
+.admin-content {
+  --background: #ffffff; /* Cambiado de #f5f6fa a blanco */
 }
 
-.emoji-icon {
-  font-size: 1.2em;
+.header-toolbar {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --color: white;
+}
+
+.page-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.title-icon, .emoji-icon {
+  font-size: 1.2rem;
   margin-right: 8px;
 }
 
 .action-emoji {
-  margin-right: 8px;
+  font-size: 1.1rem;
 }
 
-// NUEVOS ESTILOS: Buscador
-.search-card {
-  margin-bottom: 15px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.search-title {
-  color: #2dd36f;
-  font-weight: 600;
-  font-size: 1.1em;
-}
-
-.search-container {
-  .search-item {
-    --background: #000000;
-    --border-radius: 8px;
-    --padding-start: 16px;
-    --padding-end: 16px;
-    margin-bottom: 10px;
-    border: 1px solid #ffffff;
-    border-radius: 8px;
-  }
-}
-
-.search-results {
-  .search-count {
-    color: #606060;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-  }
-}
-
-// ESTILOS MEJORADOS: Carrito con descuentos
-.cart-card {
-  margin-bottom: 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-left: 4px solid #2dd36f;
-}
-
-.cart-header {
-  background: linear-gradient(135deg, #2dd36f, #28c56a);
+.admin-info-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 12px 12px 0 0;
+  margin-bottom: 16px;
 }
 
-.cart-title {
-  font-weight: 700;
-  margin-bottom: 5px;
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.cart-count {
-  font-size: 0.9em;
+.admin-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.stat-label {
+  font-size: 0.9rem;
   opacity: 0.9;
 }
 
-.cart-item {
-  --background: #fafafa;
+.filter-card {
+  margin-bottom: 16px;
+  background: #ffffff; /* Añadido fondo blanco */
+}
+
+.filter-title {
+  color: #5a67d8;
+  font-size: 1.1rem;
+}
+
+.filter-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-card {
+  margin-bottom: 16px;
+  background: #ffffff; /* Añadido fondo blanco */
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.stat-box {
+  text-align: center;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+}
+
+.stat-emoji {
+  display: block;
+  font-size: 2rem;
   margin-bottom: 8px;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
 }
 
-.cart-product-avatar {
-  margin-right: 12px;
-  .avatar-emoji {
-    font-size: 1.5em;
-  }
+.stat-count {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #5a67d8;
 }
 
-.cart-product-info {
+.stat-title {
+  font-size: 0.9rem;
+  color: #718096;
+}
+
+.orders-list-card {
+  margin-bottom: 16px;
+  background: #ffffff; /* Añadido fondo blanco */
+}
+
+.list-header {
+  background: #ffffff; /* Cambiado de #f7fafc a blanco */
+}
+
+.list-title {
+  color: #2d3748;
+  font-size: 1.2rem;
+}
+
+.order-count {
+  color: #718096;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  background: #ffffff; /* Añadido fondo blanco */
+}
+
+.empty-content {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.empty-emoji {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.orders-list {
+  padding: 0;
+  background: #ffffff; /* Añadido fondo blanco */
+}
+
+.order-item {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 16px;
+}
+
+.order-avatar {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-emoji {
+  font-size: 1.5rem;
+}
+
+.order-info {
+  margin-left: 16px;
   flex: 1;
-  
-  .cart-product-name {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 4px;
-  }
-  
-  .cart-product-details {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    
-    .cart-detail {
-      font-size: 0.85em;
-      color: #666;
-      display: flex;
-      align-items: center;
-    }
-  }
 }
 
-.cart-actions {
+.order-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #2d3748;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+}
+
+.order-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 4px;
+}
+
+.order-detail {
+  margin: 2px 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+}
+
+.detail-emoji {
+  margin-right: 6px;
+  font-size: 1rem;
+}
+
+.total-detail {
+  font-size: 1rem;
+  color: #2d3748;
+}
+
+.discount-text {
+  color: #38a169;
+  font-weight: 500;
+}
+
+.discount-applied {
+  color: #38a169;
+  font-weight: 500;
+}
+
+.action-buttons {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-// NUEVOS ESTILOS: Resumen del carrito con descuentos
-.cart-summary {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin-top: 15px;
-  border: 1px solid #e0e0e0;
+.detail-button, .edit-button, .delete-button {
+  min-width: 40px;
+  height: 40px;
 }
 
-.summary-line {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
+.admin-help-card {
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.help-content {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.help-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.help-content li {
+  margin-bottom: 4px;
+}
+
+.nav-button, .logout-button, .back-button {
+  color: white !important;
+}
+
+/* Añadido: Fondo blanco global para la aplicación */
+body, ion-app, ion-content {
+  --background: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* Estilos específicos para labels visibles */
+ion-item ion-label,
+ion-label.item-label,
+.item-label,
+[slot="label"] {
+  --color: #1a202c !important;
+  color: #1a202c !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Para etiquetas flotantes y apiladas */
+ion-label.label-stacked,
+ion-label.label-floating {
+  --color: #1a202c !important;
+  color: #1a202c !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+/* Estilos para modales específicos */
+ion-modal ion-label,
+.modal-wrapper ion-label {
+  --color: #1a202c !important;
+  color: #1a202c !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+/* ====================================== */
+/* ESTILOS CORREGIDOS PARA TEXTO NEGRO   */
+/* ====================================== */
+
+/* Estilos globales para formularios - Texto negro en inputs */
+ion-input {
+  --color: #000000 !important; /* Cambiado de #ffffff a negro para mejor contraste */
+  color: #000000 !important;
+  --placeholder-color: #666666 !important;
+  --background: #ffffff !important; /* Añadido fondo blanco */
+}
+
+ion-textarea {
+  --color: #000000 !important;
+  color: #000000 !important;
+  --placeholder-color: #666666 !important;
+  --background: #ffffff !important; /* Añadido fondo blanco */
+}
+
+ion-select {
+  --color: #000000 !important;
+  color: #000000 !important;
+  --placeholder-color: #666666 !important;
+  --background: #ffffff !important; /* Añadido fondo blanco */
+}
+
+ion-label {
+  --color: #2d3748 !important;
+  color: #2d3748 !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+ion-item {
+  --color: #000000 !important;
+  --background: #ffffff !important; /* Añadido fondo blanco */
   
-  &.discount-line {
-    color: #28a745;
-    font-weight: 600;
+  ion-input,
+  ion-textarea,
+  ion-select {
+    --color: #000000 !important;
+    color: #000000 !important;
+    --background: #ffffff !important;
+  }
+}
+
+/* Específicamente para modal de edición/creación */
+.edit-product-modal,
+.create-product-modal {
+  --background: #ffffff !important; /* Añadido fondo blanco */
+  
+  ion-input {
+    --color: #000000 !important;
+    color: #000000 !important;
+    --background: #ffffff;
   }
   
-  &.total-line {
-    border-top: 2px solid #2dd36f;
-    padding-top: 8px;
-    margin-top: 12px;
-    
-    .total-label {
-      font-weight: 700;
-      font-size: 1.1em;
-    }
-    
-    .total-amount {
-      font-weight: 700;
-      font-size: 1.2em;
-      color: #2dd36f;
-    }
-  }
-}
-
-.summary-amount {
-  font-weight: 600;
-}
-
-.discount-amount {
-  color: #28a745;
-  font-weight: 700;
-}
-
-.discount-info {
-  .discount-message {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9em;
-    text-align: center;
-    margin: 8px 0;
+  ion-textarea {
+    --color: #000000 !important;
+    color: #000000 !important;
+    --background: #ffffff;
   }
   
-  .discount-message-warning {
-    background: linear-gradient(135deg, #ffc107, #ffb300);
-    color: #333;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9em;
-    text-align: center;
-    margin: 8px 0;
-  }
-}
-
-// NUEVOS ESTILOS: Modal de pago
-.payment-content {
-  padding: 16px;
-}
-
-.payment-summary {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  
-  .payment-line {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    
-    &.total-payment {
-      border-top: 2px solid #2dd36f;
-      padding-top: 8px;
-      margin-top: 12px;
-      font-size: 1.1em;
-    }
+  ion-select {
+    --color: #000000 !important;
+    color: #000000 !important;
+    --background: #ffffff;
   }
   
-  .savings-message {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    text-align: center;
-    margin-top: 10px;
-    font-weight: 600;
+  ion-label {
+    --color: #2d3748 !important;
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
   }
 }
 
-.payment-methods {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+/* Para campos específicos del producto */
+.product-form {
+  background: #ffffff !important; /* Añadido fondo blanco */
   
   ion-item {
-    --background: #fff;
-    --border-radius: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #e0e0e0;
+    --background: #ffffff;
+    --border-color: #e2e8f0;
+    margin-bottom: 16px;
     border-radius: 8px;
-    transition: all 0.3s ease;
     
-    &.selected {
-      --background: #e8f5e8;
-      border-color: #2dd36f;
-      transform: translateX(4px);
-    }
-    
-    &:hover {
-      --background: #f8f9fa;
-    }
-  }
-}
-
-.payment-option {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  
-  .payment-emoji {
-    font-size: 1.8em;
-    margin-right: 15px;
-  }
-  
-  .payment-title {
-    font-weight: 600;
-    color: #333;
-  }
-  
-  .payment-description {
-    font-size: 0.85em;
-    color: #666;
-    margin-top: 2px;
-  }
-}
-
-.payment-actions {
-  padding: 16px;
-  
-  .confirm-button {
-    margin-bottom: 10px;
-    --background: #2dd36f;
-    --background-activated: #24b865;
-    font-weight: 600;
-  }
-}
-
-// ESTILOS MEJORADOS: Productos
-.product-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 15px;
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  ion-img {
-    height: 200px;
-    object-fit: cover;
-  }
-  
-  .product-description {
-    font-size: 0.9em;
-    color: #666;
-    margin-bottom: 8px;
-  }
-  
-  .product-price {
-    font-size: 1.1em;
-    color: #2dd36f;
-    margin-bottom: 8px;
-  }
-  
-  .admin-info {
-    font-size: 0.85em;
-    color: #666;
-    margin: 4px 0;
-  }
-  
-  .admin-buttons {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }
-  
-  .out-of-stock, .low-stock {
-    font-weight: 600;
-    
-    &.out-of-stock {
-      color: #dc3545;
-    }
-    
-    &.low-stock {
-      color: #ffc107;
-    }
-  }
-}
-
-// NUEVOS ESTILOS: Badges de stock
-.stock-badge {
-  font-size: 0.7em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-  margin-left: 8px;
-  
-  &.out-of-stock-badge {
-    background: #dc3545;
-    color: white;
-  }
-  
-  &.low-stock-badge {
-    background: #ffc107;
-    color: #333;
-  }
-}
-
-// Vista lista mejorada
-.product-list-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 15px;
-}
-
-.list-header {
-  background: linear-gradient(135deg, #6f42c1, #5a38a3);
-  color: white;
-  border-radius: 12px 12px 0 0;
-}
-
-.product-item {
-  --background: #fafafa;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-  
-  .product-info {
-    flex: 1;
-    
-    .product-name {
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      
-      .product-id {
-        font-size: 0.8em;
-        color: #666;
-        margin-left: 8px;
-      }
-    }
-    
-    .product-description {
-      color: #666;
-      font-size: 0.9em;
+    ion-label {
+      --color: #2d3748 !important;
+      color: #2d3748 !important;
+      font-weight: 600 !important;
       margin-bottom: 8px;
+      opacity: 1 !important;
     }
     
-    .product-details {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 4px;
+    ion-input,
+    ion-textarea,
+    ion-select {
+      --color: #000000 !important;
+      color: #000000 !important;
+      --placeholder-color: #718096 !important;
+      --background: #ffffff;
       
-      .product-detail {
-        font-size: 0.85em;
-        color: #666;
-        display: flex;
-        align-items: center;
+      &.native-input,
+      &.native-textarea {
+        color: #000000 !important;
       }
     }
   }
 }
 
-// Estado vacío
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: #666;
+/* Asegurar que el texto sea visible en todos los estados */
+ion-input.has-focus,
+ion-textarea.has-focus,
+ion-select.has-focus {
+  --color: #000000 !important;
+  color: #000000 !important;
+  --background: #ffffff !important;
+}
+
+/* Para el texto cuando está deshabilitado */
+ion-input[disabled],
+ion-textarea[disabled],
+ion-select[disabled] {
+  --color: #4a5568 !important;
+  color: #4a5568 !important;
+  opacity: 0.7;
+  --background: #ffffff !important;
+}
+
+/* Estilos adicionales para mejorar la legibilidad */
+.form-section {
+  background: #ffffff !important; /* Añadido fondo blanco */
   
-  .emoji-icon {
-    font-size: 3em;
-    display: block;
-    margin-bottom: 15px;
+  .section-title {
+    color: #2d3748;
+    font-weight: bold;
+    margin: 20px 0 10px 0;
+    font-size: 1.1rem;
+  }
+}
+
+/* Si usas un contenedor específico para el formulario */
+.product-edit-container,
+.product-create-container {
+  background: #ffffff !important; /* Añadido fondo blanco */
+  
+  ion-input,
+  ion-textarea,
+  ion-select {
+    --color: #000000 !important;
+    color: #000000 !important;
+    --placeholder-color: #718096 !important;
+    --background: #ffffff !important;
+    
+    /* Para navegadores webkit */
+    input,
+    textarea,
+    select {
+      color: #000000 !important;
+      -webkit-text-fill-color: #000000 !important;
+      background: #ffffff !important;
+    }
   }
   
-  p {
-    margin-bottom: 20px;
-    font-size: 1.1em;
+  ion-label {
+    --color: #2d3748 !important;
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
   }
 }
 
-// Información adicional
-.info-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
-  border-left: 4px solid #ffc107;
+/* Estilos específicos para elementos nativos dentro de Ionic */
+ion-input input,
+ion-textarea textarea {
+  color: #000000 !important; /* Cambiado de #ffffff a negro */
+  -webkit-text-fill-color: #000000 !important;
+  background: #ffffff !important; /* Añadido fondo blanco */
 }
 
-.discount-info-section {
-  .discount-title {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-    font-size: 1.1em;
-  }
-  
-  .discount-details {
-    color: #666;
-    font-size: 0.9em;
-  }
+/* Para selectores específicos si tienes IDs o clases específicas */
+#nombre-input,
+#descripcion-textarea,
+#precio-input,
+#stock-input,
+#categoria-select {
+  --color: #000000 !important;
+  color: #000000 !important;
+  --background: #ffffff !important;
 }
 
-// Formulario admin
-.form-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
-.form-header {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
-  border-radius: 12px 12px 0 0;
-}
-
-.form-item {
-  --background: #fff;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.input-label {
-  font-weight: 600;
-  color: #333;
-}
-
-.toggle-form-button, .submit-button {
-  margin: 10px 16px;
-  font-weight: 600;
-}
-
-.checkout-button, .clear-cart-button {
-  margin: 8px 0;
-  font-weight: 600;
-}
-
-// Responsive
+/* Responsive design */
 @media (max-width: 768px) {
-  .product-details {
-    grid-template-columns: 1fr !important;
+  .admin-header {
+    flex-direction: column;
+    gap: 16px;
   }
   
-  .admin-buttons {
+  .admin-stats {
+    justify-content: center;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .order-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .order-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .filter-actions {
     flex-direction: column;
   }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
   
-  .payment-actions {
+  .stat-box {
     padding: 12px;
   }
-}
-
-// Animaciones
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+  
+  .admin-stats {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.cart-card, .search-card, .product-card {
-  animation: slideIn 0.3s ease-out;
 }

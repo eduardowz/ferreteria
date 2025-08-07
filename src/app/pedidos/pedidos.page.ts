@@ -8,7 +8,7 @@ import {
   IonBackButton, IonButtons, IonInput, IonItem,
   IonList, IonLabel, IonButton, IonCardTitle, IonCardHeader, IonCard, IonCardContent,
   IonSelect, IonSelectOption, IonAvatar, IonNote, IonRadioGroup, IonRadio,
-  IonBadge, // <-- AÑADE ESTA IMPORTACIÓN
+  IonBadge,
   AlertController, ToastController
 } from '@ionic/angular/standalone';
 
@@ -38,6 +38,7 @@ interface Usuario {
   id: string;
   nombre: string;
   email: string;
+  role: 'admin' | 'user';
   rol: 'admin' | 'usuario';
 }
 
@@ -47,7 +48,6 @@ interface Usuario {
   styleUrls: ['./pedidos.page.scss'],
   standalone: true,
   imports: [
-    // Todos los componentes Ionic que estás usando:
     IonBadge, IonRadio, IonRadioGroup, IonNote, IonAvatar, 
     IonCardContent, IonCard, IonCardHeader, IonCardTitle,
     CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar,
@@ -57,7 +57,7 @@ interface Usuario {
 })
 export class PedidosPage implements OnInit, OnDestroy {
   // Datos del usuario actual
-  usuarioActual: Usuario = { id: '', nombre: '', email: '', rol: 'usuario' };
+  usuarioActual: Usuario = { id: '', nombre: '', email: '', role: 'user', rol: 'usuario' };
   esAdmin = false;
 
   // Datos de pedidos/compras
@@ -99,22 +99,44 @@ export class PedidosPage implements OnInit, OnDestroy {
     const userData = localStorage.getItem('userData');
     if (userData) {
       try {
-        this.usuarioActual = JSON.parse(userData);
-        this.esAdmin = this.usuarioActual.rol === 'admin';
+        const user = JSON.parse(userData);
+        this.usuarioActual = {
+          id: user.id || '',
+          nombre: user.nombre || '',
+          email: user.email || '',
+          role: user.role || 'user',
+          rol: user.rol || 'usuario'
+        };
+        
+        // VERIFICACIÓN MEJORADA: Comprobar ambos campos de rol
+        this.esAdmin = (user.role === 'admin') || (user.rol === 'admin');
+        
+        console.log('Usuario cargado en pedidos:', this.usuarioActual);
+        console.log('Es admin?:', this.esAdmin);
+        console.log('Role:', user.role);
+        console.log('Rol:', user.rol);
+        
       } catch (error) {
         console.error('Error al parsear datos del usuario:', error);
         this.redirigirALogin();
       }
     } else {
+      console.log('No hay userData en localStorage');
       this.redirigirALogin();
     }
   }
 
   verificarPermisos() {
+    console.log('Verificando permisos. Es admin?:', this.esAdmin);
+    
     if (!this.esAdmin) {
       this.mostrarToast('Acceso denegado. Solo administradores pueden ver esta página.', 'danger');
+      console.log('Acceso denegado, redirigiendo a home');
       this.router.navigate(['/home']);
+      return;
     }
+    
+    console.log('Permisos de admin verificados correctamente');
   }
 
   cargarComprasRealizadas() {
@@ -128,6 +150,7 @@ export class PedidosPage implements OnInit, OnDestroy {
         this.comprasRealizadas = [];
       }
     } else {
+      console.log('No hay compras realizadas en localStorage');
       this.comprasRealizadas = [];
     }
   }
@@ -183,6 +206,12 @@ export class PedidosPage implements OnInit, OnDestroy {
   }
 
   async cambiarEstadoCompra(compra: CompraRealizada) {
+    // VERIFICACIÓN ADICIONAL antes de permitir cambios
+    if (!this.esAdmin) {
+      this.mostrarToast('No tienes permisos para cambiar el estado de las compras', 'danger');
+      return;
+    }
+
     const alert = await this.alertController.create({
       header: 'Cambiar Estado',
       message: `Compra #${compra.id} - ${compra.cliente}`,
@@ -216,6 +245,12 @@ export class PedidosPage implements OnInit, OnDestroy {
   }
 
   async eliminarCompra(compraId: number) {
+    // VERIFICACIÓN ADICIONAL antes de permitir eliminación
+    if (!this.esAdmin) {
+      this.mostrarToast('No tienes permisos para eliminar compras', 'danger');
+      return;
+    }
+
     const alert = await this.alertController.create({
       header: 'Eliminar Compra',
       message: '¿Estás seguro de que quieres eliminar esta compra? Esta acción no se puede deshacer.',
@@ -263,6 +298,12 @@ export class PedidosPage implements OnInit, OnDestroy {
   }
 
   exportarDatos() {
+    // VERIFICACIÓN ADICIONAL antes de permitir exportación
+    if (!this.esAdmin) {
+      this.mostrarToast('No tienes permisos para exportar datos', 'danger');
+      return;
+    }
+
     // Crear un resumen de las compras para exportar
     const resumen = {
       fechaExportacion: new Date().toISOString(),
@@ -306,11 +347,15 @@ export class PedidosPage implements OnInit, OnDestroy {
         {
           text: 'Cerrar Sesión',
           handler: () => {
+            // Limpiar todos los datos de sesión
             localStorage.removeItem('userData');
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('userType');
             localStorage.removeItem('userEmail');
             localStorage.removeItem('userName');
+            localStorage.removeItem('role');
+            localStorage.removeItem('rol');
+            localStorage.removeItem('currentUser');
             this.router.navigate(['/login']);
           }
         }

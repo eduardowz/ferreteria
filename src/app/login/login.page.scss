@@ -7,61 +7,13 @@
   min-height: 100vh;
 }
 
-// Estilos para el header y botón de regreso
-.header-transparent {
-  --background: transparent;
-  --border-color: transparent;
-  --color: rgba(255, 255, 255, 0.9);
-}
-
-.toolbar-transparent {
-  --background: transparent;
-  --color: rgba(255, 255, 255, 0.9);
-  --padding-start: 20px;
-  --padding-end: 20px;
-  --padding-top: 10px;
-  --padding-bottom: 10px;
-}
-
-.back-to-home-button {
-  --background: rgba(255, 255, 255, 0.1);
-  --color: white;
-  --border-radius: 25px;
-  --padding-start: 15px;
-  --padding-end: 15px;
-  --padding-top: 8px;
-  --padding-bottom: 8px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 14px;
-  font-weight: 500;
-  text-transform: none;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    --background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-.back-text {
-  margin-left: 8px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 .login-container {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
   padding: 20px;
-  margin-top: 60px; // Espacio para el header
+  margin-top: 20px;
 }
 
 .login-card {
@@ -70,8 +22,9 @@
   padding: 40px 30px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   backdrop-filter: blur(10px);
+  animation: fadeIn 0.6s ease-out;
 }
 
 .logo-section {
@@ -107,14 +60,99 @@
   font-weight: 500;
 }
 
+// Selector de tipo de login
 .login-type-segment {
   margin-bottom: 25px;
   border-radius: 12px;
   overflow: hidden;
+  --background: #f8f9fa;
+  
+  ion-segment-button {
+    --color: #6c757d;
+    --color-checked: #fff;
+    --border-radius: 12px;
+    --indicator-color: transparent;
+    --indicator-box-shadow: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    
+    &.segment-button-checked {
+      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --color-checked: white;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    ion-label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    ion-icon {
+      font-size: 18px;
+      margin-top: 2px;
+    }
+  }
 }
 
-.login-form,
-.register-form {
+// Credenciales de demostración
+.demo-credentials {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: rgba(102, 126, 234, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  
+  ion-card-header {
+    padding-bottom: 8px;
+  }
+  
+  .demo-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    
+    ion-icon {
+      color: #667eea;
+      font-size: 20px;
+    }
+  }
+  
+  ion-card-content {
+    padding-top: 5px;
+  }
+  
+  .credential-info {
+    font-size: 14px;
+    color: #495057;
+    
+    p {
+      margin: 5px 0;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    strong {
+      color: #2c3e50;
+      font-weight: 600;
+    }
+    
+    em {
+      color: #667eea;
+      font-style: normal;
+      font-weight: 500;
+    }
+  }
+}
+
+// Formulario
+.login-form {
   margin-bottom: 20px;
 }
 
@@ -129,12 +167,27 @@
   --inner-padding-start: 15px;
   --inner-padding-end: 15px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.form-item ion-icon {
-  color: #6c757d;
-  font-size: 20px;
-  margin-right: 10px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    --border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+  }
+  
+  &.item-has-focus {
+    --border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  }
+  
+  ion-icon {
+    color: #6c757d;
+    font-size: 20px;
+    margin-right: 10px;
+    
+    &:first-child {
+      margin-right: 10px;
+    }
+  }
 }
 
 .custom-input {
@@ -146,46 +199,181 @@
 
 .password-toggle-btn {
   --color: #6c757d;
-  --color-hover: #495057;
+  --color-hover: #667eea;
   height: 40px;
   width: 40px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    --background: rgba(102, 126, 234, 0.1);
+  }
 }
 
-.login-button,
-.register-button {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --color: white;
+// Botones principales
+.login-button {
   --border-radius: 12px;
-  --box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   font-size: 16px;
   font-weight: 600;
   height: 50px;
   margin-top: 15px;
   text-transform: none;
   letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  
+  // Color por defecto (usuario)
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --color: white;
+  --box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  
+  // Color para admin (se aplica cuando [color]="danger")
+  &.button-color-danger {
+    --background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    --box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+  }
+  
+  &:hover:not([disabled]) {
+    transform: translateY(-2px);
+    --box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    
+    &.button-color-danger {
+      --box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &[disabled] {
+    --background: #bdc3c7;
+    --box-shadow: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
-.login-button:hover,
-.register-button:hover {
-  --box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+// Enlaces adicionales y registro
+.additional-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
 }
 
-.back-button {
+.redireccionar-registro {
+  text-align: center;
+  margin-top: 15px;
+  
+  p {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  
+  ion-button {
+    --color: #667eea;
+    --color-hover: #5a6fd8;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: none;
+    --padding-start: 8px;
+    --padding-end: 8px;
+    height: auto;
+    
+    &:hover {
+      --background: rgba(102, 126, 234, 0.1);
+    }
+  }
+}
+
+// Sección de registro
+.registro-section {
+  margin-top: 30px;
+  animation: slideDown 0.4s ease-out;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  margin: 25px 0 20px 0;
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e9ecef, transparent);
+  }
+  
+  .divider-text {
+    padding: 0 20px;
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+  }
+}
+
+.registro-form {
+  margin-bottom: 20px;
+}
+
+.registro-buttons {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.registro-button {
+  --background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  --color: white;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+  font-size: 16px;
+  font-weight: 600;
+  height: 50px;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  
+  &:hover:not([disabled]) {
+    transform: translateY(-2px);
+    --box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &[disabled] {
+    --background: #bdc3c7;
+    --box-shadow: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.cancelar-button {
   --color: #6c757d;
   --border-color: #6c757d;
   --border-radius: 12px;
   font-size: 16px;
   font-weight: 500;
   height: 45px;
-  margin-top: 10px;
   text-transform: none;
-}
-
-.additional-links {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    --color: #495057;
+    --border-color: #495057;
+    --background: rgba(108, 117, 125, 0.1);
+  }
 }
 
 .link-button {
@@ -195,28 +383,110 @@
   font-weight: 500;
   text-transform: none;
   margin: 5px 0;
+  
+  &:hover {
+    --background: rgba(102, 126, 234, 0.1);
+  }
 }
 
+// Mensajes de error
 .error-message {
   color: #e74c3c;
   text-align: center;
   margin-top: 15px;
   font-size: 14px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  ion-icon {
+    font-size: 18px;
+    color: #e74c3c;
+  }
+  
+  p {
+    margin: 0;
+    padding: 10px 15px;
+    background: rgba(231, 76, 60, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #e74c3c;
+    flex: 1;
+    max-width: 300px;
+  }
 }
 
-.error-message p {
-  margin: 0;
-  padding: 10px;
-  background: rgba(231, 76, 60, 0.1);
-  border-radius: 8px;
-  border-left: 4px solid #e74c3c;
+// Información de roles
+.role-info {
+  margin-top: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: rgba(248, 249, 250, 0.8);
+  border: 1px solid rgba(233, 236, 239, 0.5);
+  
+  ion-card-content {
+    padding: 20px;
+  }
+  
+  .role-description {
+    h3 {
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      &::before {
+        content: '';
+        width: 4px;
+        height: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 2px;
+      }
+    }
+    
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      list-style-type: none;
+      
+      li {
+        margin: 8px 0;
+        color: #495057;
+        font-size: 14px;
+        position: relative;
+        padding-left: 20px;
+        
+        &::before {
+          content: '✓';
+          position: absolute;
+          left: 0;
+          color: #28a745;
+          font-weight: bold;
+          font-size: 12px;
+        }
+        
+        &:first-child {
+          margin-top: 0;
+        }
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
 }
 
+// Footer
 .login-footer {
   padding: 20px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .footer-content {
@@ -239,12 +509,14 @@
 // Responsive design
 @media (max-width: 480px) {
   .login-container {
-    margin-top: 70px; // Más espacio en móviles
+    padding: 15px;
+    margin-top: 10px;
   }
   
   .login-card {
     padding: 30px 20px;
-    margin: 10px;
+    margin: 5px;
+    max-width: 100%;
   }
   
   .login-title {
@@ -255,14 +527,80 @@
     font-size: 14px;
   }
   
-  .back-to-home-button {
-    --padding-start: 10px;
-    --padding-end: 10px;
-    font-size: 12px;
+  .demo-credentials {
+    margin-bottom: 15px;
+    
+    .demo-title {
+      font-size: 14px;
+    }
+    
+    .credential-info {
+      font-size: 13px;
+    }
   }
   
-  .back-text {
+  .role-info {
+    .role-description {
+      h3 {
+        font-size: 16px;
+      }
+      
+      ul li {
+        font-size: 13px;
+      }
+    }
+  }
+  
+  .login-type-segment {
+    ion-segment-button {
+      ion-label {
+        font-size: 12px;
+      }
+      
+      ion-icon {
+        font-size: 16px;
+      }
+    }
+  }
+  
+  .registro-section {
+    margin-top: 20px;
+  }
+  
+  .section-divider {
+    margin: 20px 0 15px 0;
+    
+    .divider-text {
+      font-size: 13px;
+      padding: 0 15px;
+    }
+  }
+  
+  .registro-buttons {
+    gap: 8px;
+  }
+  
+  .registro-button,
+  .cancelar-button {
+    height: 45px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 320px) {
+  .login-card {
+    padding: 25px 15px;
+  }
+  
+  .redireccionar-registro p {
+    font-size: 13px;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .section-divider .divider-text {
     font-size: 12px;
+    padding: 0 10px;
   }
 }
 
@@ -289,73 +627,70 @@
   }
 }
 
-.login-card {
-  animation: fadeIn 0.6s ease-out;
-}
-
-.back-to-home-button {
-  animation: slideInFromTop 0.5s ease-out;
-}
-
-// Estados deshabilitados
-.login-button[disabled],
-.register-button[disabled] {
-  --background: #bdc3c7;
-  --box-shadow: none;
-  opacity: 0.6;
-}
-
-// Estilos adicionales para mejorar la experiencia
-.demo-credentials {
-  margin-bottom: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  
-  .demo-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2c3e50;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+    max-height: 0;
   }
-  
-  .credential-info {
-    font-size: 14px;
-    color: #495057;
-    
-    p {
-      margin: 5px 0;
-    }
-    
-    strong {
-      color: #2c3e50;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1000px;
   }
 }
 
+// Animación de entrada suave para elementos
+.demo-credentials,
 .role-info {
-  margin-top: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  
-  .role-description {
-    h3 {
-      color: #2c3e50;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 10px;
+  animation: fadeIn 0.8s ease-out 0.2s both;
+}
+
+.login-type-segment {
+  animation: fadeIn 0.6s ease-out 0.1s both;
+}
+
+.registro-section {
+  animation: slideDown 0.5s ease-out;
+}
+
+// Estados de hover mejorados
+@media (hover: hover) {
+  .login-type-segment ion-segment-button:hover:not(.segment-button-checked) {
+    --background: rgba(102, 126, 234, 0.1);
+    --color: #667eea;
+  }
+}
+
+// Mejoras para accesibilidad
+.form-item:focus-within {
+  --border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+// Estilos para el modo oscuro (opcional)
+@media (prefers-color-scheme: dark) {
+  .login-card {
+    background: rgba(45, 55, 72, 0.95);
+    
+    .login-title {
+      color: #f7fafc;
     }
     
-    ul {
-      margin: 0;
-      padding-left: 20px;
-      
-      li {
-        margin: 5px 0;
-        color: #495057;
-        font-size: 14px;
-      }
+    .login-subtitle {
+      color: #a0aec0;
     }
+  }
+  
+  .form-item {
+    --background: #4a5568;
+    --border-color: #2d3748;
+    --color: #f7fafc;
+  }
+  
+  .demo-credentials,
+  .role-info {
+    background: rgba(45, 55, 72, 0.8);
+    border-color: rgba(74, 85, 104, 0.5);
   }
 }

@@ -4,7 +4,7 @@
       <!-- Logo y título -->
       <div class="logo-section">
         <div class="logo-wrapper">
-          <ion-img src="assets/ferreteria.png" class="logo" alt="Logo Ferretería X"></ion-img>
+          <ion-img src="assets/ferrteria.png" class="logo" alt="Logo Ferretería X"></ion-img>
         </div>
         <h1 class="login-title">Ferretería X</h1>
         <p class="login-subtitle">{{ loginType === 'admin' ? 'Panel de Administración' : 'Portal de Usuario' }}</p>
@@ -14,7 +14,7 @@
       <ion-segment [(ngModel)]="loginType" class="login-type-segment">
         <ion-segment-button value="admin">
           <ion-label>Administrador</ion-label>
-          <ion-icon name="settings-outline"></ion-icon>
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
         </ion-segment-button>
         <ion-segment-button value="user">
           <ion-label>Usuario</ion-label>
@@ -32,29 +32,28 @@
         </ion-card-header>
         <ion-card-content>
           <div *ngIf="loginType === 'admin'" class="credential-info">
-            <p><strong>Email:</strong> admin&#64;ferreteria.com</p>
+            <p><strong>Usuario:</strong> admin</p>
             <p><strong>Contraseña:</strong> admin123</p>
           </div>
           <div *ngIf="loginType === 'user'" class="credential-info">
-            <p><strong>Email:</strong> usuario&#64;test.com</p>
-            <p><strong>Contraseña:</strong> user123</p>
+            <p><em>Usa tu cuenta registrada o regístrate</em></p>
           </div>
         </ion-card-content>
       </ion-card>
 
       <!-- Formulario de login -->
       <form class="login-form" #loginForm="ngForm">
-        <!-- Campo de correo electrónico -->
+        <!-- Campo de usuario -->
         <ion-item lines="full" class="form-item">
           <ion-input
-            [(ngModel)]="email"
-            name="email"
-            type="email"
+            [(ngModel)]="username"
+            name="username"
+            type="text"
             required
-            placeholder="Correo Electrónico"
+            placeholder="Usuario"
             class="custom-input"
           ></ion-input>
-          <ion-icon name="mail-outline" slot="start"></ion-icon>
+          <ion-icon name="person-outline" slot="start"></ion-icon>
         </ion-item>
 
         <!-- Campo de contraseña -->
@@ -92,20 +91,141 @@
             [name]="loginType === 'admin' ? 'shield-checkmark-outline' : 'log-in-outline'" 
             slot="start"
           ></ion-icon>
-          {{ loginType === 'admin' ? 'Acceso Administrador' : 'Acceso Usuario' }}
+          {{ loginType === 'admin' ? 'Acceso Administrador' : 'Iniciar Sesión' }}
         </ion-button>
       </form>
 
       <!-- Enlaces adicionales para usuarios -->
       <div class="additional-links" *ngIf="loginType === 'user'">
-        <ion-button fill="clear" class="link-button" (click)="forgotPassword()">
-          <ion-icon name="help-circle-outline" slot="start"></ion-icon>
-          ¿Olvidaste tu contraseña?
-        </ion-button>
-        <ion-button fill="clear" class="link-button" (click)="createAccount()">
-          <ion-icon name="person-add-outline" slot="start"></ion-icon>
-          Crear cuenta nueva
-        </ion-button>
+        <div class="redireccionar-registro">
+          <p>¿No tienes cuenta? 
+            <ion-button fill="clear" size="small" (click)="toggleRegistro()">
+              <ion-icon name="person-add-outline" slot="start"></ion-icon>
+              Registrarse
+            </ion-button>
+          </p>
+        </div>
+      </div>
+      
+      <!-- Formulario de registro (solo visible cuando showRegistro es true) -->
+      <div class="registro-section" *ngIf="showRegistro && loginType === 'user'">
+        <div class="section-divider">
+          <span class="divider-text">Crear Nueva Cuenta</span>
+        </div>
+        
+        <form class="registro-form" #registroForm="ngForm">
+          <!-- Campo de nombre completo -->
+          <ion-item lines="full" class="form-item">
+            <ion-input
+              [(ngModel)]="registroData.nombre"
+              name="nombre"
+              type="text"
+              required
+              placeholder="Nombre Completo"
+              class="custom-input"
+            ></ion-input>
+            <ion-icon name="person-outline" slot="start"></ion-icon>
+          </ion-item>
+
+          <!-- Campo de usuario -->
+          <ion-item lines="full" class="form-item">
+            <ion-input
+              [(ngModel)]="registroData.username"
+              name="username"
+              type="text"
+              required
+              placeholder="Nombre de Usuario"
+              class="custom-input"
+            ></ion-input>
+            <ion-icon name="at-outline" slot="start"></ion-icon>
+          </ion-item>
+
+          <!-- Campo de email -->
+          <ion-item lines="full" class="form-item">
+            <ion-input
+              [(ngModel)]="registroData.email"
+              name="email"
+              type="email"
+              required
+              placeholder="Correo Electrónico"
+              class="custom-input"
+            ></ion-input>
+            <ion-icon name="mail-outline" slot="start"></ion-icon>
+          </ion-item>
+
+          <!-- Campo de contraseña -->
+          <ion-item lines="full" class="form-item">
+            <ion-input
+              [(ngModel)]="registroData.password"
+              name="password"
+              [type]="showPasswordRegistro ? 'text' : 'password'"
+              required
+              placeholder="Contraseña"
+              class="custom-input"
+            ></ion-input>
+            <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+            <ion-button 
+              fill="clear" 
+              slot="end" 
+              (click)="togglePasswordRegistroVisibility()"
+              class="password-toggle-btn"
+              type="button"
+            >
+              <ion-icon [name]="showPasswordRegistro ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+            </ion-button>
+          </ion-item>
+
+          <!-- Campo de confirmar contraseña -->
+          <ion-item lines="full" class="form-item">
+            <ion-input
+              [(ngModel)]="registroData.confirmPassword"
+              name="confirmPassword"
+              [type]="showPasswordRegistro ? 'text' : 'password'"
+              required
+              placeholder="Confirmar Contraseña"
+              class="custom-input"
+            ></ion-input>
+            <ion-icon name="shield-checkmark-outline" slot="start"></ion-icon>
+          </ion-item>
+
+          <!-- Campo de teléfono (opcional) -->
+          <ion-item lines="full" class="form-item">
+            <ion-input
+              [(ngModel)]="registroData.telefono"
+              name="telefono"
+              type="tel"
+              placeholder="Teléfono (Opcional)"
+              class="custom-input"
+            ></ion-input>
+            <ion-icon name="call-outline" slot="start"></ion-icon>
+          </ion-item>
+
+          <!-- Botones del formulario de registro -->
+          <div class="registro-buttons">
+            <ion-button
+              expand="block"
+              (click)="registrarUsuario()"
+              class="registro-button"
+              [disabled]="!isRegistroFormValid()"
+              color="success"
+              type="button"
+            >
+              <ion-icon name="person-add-outline" slot="start"></ion-icon>
+              Crear Cuenta
+            </ion-button>
+            
+            <ion-button
+              expand="block"
+              fill="outline"
+              (click)="cancelarRegistro()"
+              class="cancelar-button"
+              type="button"
+            >
+              <ion-icon name="close-outline" slot="start"></ion-icon>
+              Cancelar
+            </ion-button>
+          </div>
+        </form>
       </div>
 
       <!-- Mensaje de error -->
@@ -120,16 +240,16 @@
           <div class="role-description">
             <h3>{{ loginType === 'admin' ? 'Administrador' : 'Usuario' }}</h3>
             <ul *ngIf="loginType === 'admin'">
-              <li>Gestión completa de productos</li>
-              <li>Agregar, editar y eliminar productos</li>
-              <li>Gestión de proveedores</li>
-              <li>Acceso a todas las funcionalidades</li>
+              <li>Acceso completo al sistema</li>
+              <li>Gestión de productos y inventario</li>
+              <li>Administración de pedidos</li>
+              <li>Gestión de clientes</li>
             </ul>
             <ul *ngIf="loginType === 'user'">
               <li>Visualización de catálogo de productos</li>
-              <li>Agregar productos al carrito</li>
-              <li>Gestión de pedidos</li>
-              <li>Perfil de usuario</li>
+              <li>Realizar pedidos</li>
+              <li>Gestión de perfil personal</li>
+              <li>Historial de compras</li>
             </ul>
           </div>
         </ion-card-content>
@@ -141,7 +261,7 @@
   <div class="login-footer">
     <div class="footer-content">
       <p class="footer-text">© 2025 Ferretería X - Todos los derechos reservados</p>
-      <p class="footer-version">Versión 1.0.0</p>
+      <p class="footer-version">Versión 0.9.0</p>
     </div>
   </div>
 </ion-content>
