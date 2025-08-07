@@ -72,6 +72,129 @@
   margin-top: 0;
 }
 
+/* Estilos para la tarjeta de información */
+.info-card {
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  background: white;
+}
+
+.info-header {
+  padding-bottom: 5px;
+  text-align: center;
+}
+
+.info-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.info-icon {
+  font-size: 24px;
+  color: #ff9500;
+}
+
+.info-content {
+  padding-top: 0;
+}
+
+.info-description {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+  text-align: justify;
+  margin-bottom: 15px;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.feature-icon {
+  font-size: 16px;
+  color: #4CAF50;
+  min-width: 20px;
+}
+
+/* Estilos para la tarjeta del mapa */
+.map-card {
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  background: white;
+}
+
+.map-header {
+  padding-bottom: 5px;
+  text-align: center;
+}
+
+.map-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.map-icon {
+  font-size: 24px;
+  color: #ff5e3a;
+}
+
+.map-content {
+  padding: 0;
+}
+
+/* Estilos específicos para el mapa */
+.mapa {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mapa iframe {
+  width: 100%;
+  height: 250px;
+  border: none;
+  display: block;
+}
+
+.map-description {
+  padding: 15px 20px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+  background: #f8f9fa;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+
+.map-description strong {
+  color: #333;
+  font-weight: 600;
+}
+
 /* Estilos para la tarjeta del menú */
 .menu-card {
   border-radius: 15px;
@@ -100,11 +223,19 @@
   padding-top: 5px;
 }
 
-/* Estilos para las opciones del menú */
-.menu-grid {
+/* NUEVOS ESTILOS PARA GRID 2x2 */
+.admin-menu-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.user-menu-container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
+  gap: 15px;
   margin-top: 15px;
 }
 
@@ -114,6 +245,11 @@
   padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
 }
 
 .menu-option:hover {
@@ -123,14 +259,17 @@
 
 .option-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
   margin-bottom: 12px;
+  flex-grow: 1;
 }
 
 .option-emoji {
-  font-size: 24px;
-  margin-right: 12px;
-  min-width: 24px;
+  font-size: 32px;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .client-emoji {
@@ -151,16 +290,17 @@
 
 .option-description {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #555;
-  text-align: left;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .option-button {
   --border-radius: 8px;
   font-weight: 500;
-  height: 45px;
-  margin-top: 8px;
+  height: 40px;
+  margin-top: auto;
   --box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease;
 }
@@ -171,8 +311,105 @@
 }
 
 .button-emoji {
-  margin-right: 8px;
-  font-size: 18px;
+  margin-right: 6px;
+  font-size: 16px;
+}
+
+/* Estilos para indicador de rol y datos de usuario */
+.role-indicator {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 10px;
+  
+  &.admin-badge {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  }
+  
+  &.user-badge {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  }
+}
+
+.user-info-display {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 10px 15px;
+  margin-top: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  
+  .user-name {
+    margin: 0;
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+  }
+  
+  .user-email {
+    margin: 2px 0;
+    color: #666;
+    font-size: 0.85rem;
+  }
+  
+  .user-company {
+    margin: 2px 0 0;
+    color: #ff9500;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+}
+
+/* Información de contacto para usuarios */
+.contact-info {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(85, 85, 85, 0.1);
+}
+
+.contact-item {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.user-info {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+.info-box {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid rgba(63, 81, 181, 0.1);
+}
+
+.info-emoji {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.info-text {
+  margin: 0;
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 /* Estilo para el botón de cerrar sesión */
@@ -222,16 +459,74 @@
 }
 
 /* Responsive adjustments */
-@media (min-width: 768px) {
-  .menu-grid {
-    grid-template-columns: 1fr 1fr;
+@media (max-width: 767px) {
+  .admin-menu-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
   }
   
+  .option-emoji {
+    font-size: 28px;
+  }
+  
+  .option-description {
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-width: 768px) {
   .app-title {
     font-size: 1.3rem;
   }
   
   .title-icon {
     font-size: 28px;
+  }
+  
+  .mapa iframe {
+    height: 300px;
+  }
+  
+  .features-list {
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+  }
+  
+  .feature-item {
+    flex: 0 0 auto;
+    min-width: 200px;
+  }
+  
+  .admin-menu-container {
+    gap: 20px;
+  }
+  
+  .menu-option {
+    min-height: 160px;
+    padding: 20px;
+  }
+  
+  .option-emoji {
+    font-size: 36px;
+  }
+  
+  .option-description {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mapa iframe {
+    height: 350px;
+  }
+  
+  .admin-menu-container {
+    gap: 25px;
+  }
+  
+  .menu-option {
+    min-height: 180px;
+    padding: 25px;
   }
 }

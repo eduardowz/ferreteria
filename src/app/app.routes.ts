@@ -36,4 +36,8 @@ export const routes: Routes = [
     loadComponent: () => import('./pedidos/pedidos.page').then( m => m.PedidosPage),
     canActivate: [AuthGuard]
   },
+  {
+    path: 'registro',
+    loadComponent: () => import('./registro/registro.page').then( m => m.RegistroPage)
+  },
 ];

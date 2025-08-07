@@ -17,61 +17,178 @@
     <div class="icon-container">
       <span class="main-emoji">🛠️</span>
     </div>
-    <h2 class="welcome-text">Bienvenido al Panel de Control</h2>
-    <p class="subtitle-text">Gestiona tu ferretería de manera eficiente</p>
+    <h2 class="welcome-text">Bienvenido {{ userName || 'al Panel de Control' }}</h2>
+    <p class="subtitle-text">
+      {{ isAdmin ? 'Panel de administración - Gestiona tu ferretería de manera eficiente' : 'Portal de usuario - Consulta nuestros productos y servicios' }}
+    </p>
   </div>
 
+  <!-- Menú de opciones basado en rol - MOVIDO ARRIBA -->
   <ion-card class="menu-card">
     <ion-card-header class="card-header">
-      <ion-card-title class="card-title">Menú Principal</ion-card-title>
-      <ion-card-subtitle class="card-subtitle">Elige una opción para comenzar</ion-card-subtitle>
+      <ion-card-title class="card-title">
+        {{ isAdmin ? 'Panel de Administración' : 'Menú de Usuario' }}
+      </ion-card-title>
+      <ion-card-subtitle class="card-subtitle">
+        {{ isAdmin ? 'Gestión completa del sistema' : 'Consulta nuestros productos' }}
+      </ion-card-subtitle>
+      <!-- Botón para cambiar rol (solo para pruebas - eliminar en producción) -->
+      <ion-button 
+        size="small" 
+        fill="outline" 
+        (click)="toggleRole()" 
+        class="test-button"
+        *ngIf="userData && userData.email === 'admin@ferreteria.com'"
+      >
+        🔄 Cambiar a {{ isAdmin ? 'Usuario' : 'Admin' }} (Prueba)
+      </ion-button>
     </ion-card-header>
 
     <ion-card-content class="card-content">
-      <div class="menu-grid">
-        <div class="menu-option">
-          <div class="option-header">
-            <span class="option-emoji client-emoji">👥</span>
-            <p class="option-description">Administrar y registrar clientes frecuentes</p>
+      <!-- Mostrar rol actual y datos del usuario -->
+      <div class="role-indicator">
+        <span class="role-badge" [ngClass]="{'admin-badge': isAdmin, 'user-badge': !isAdmin}">
+          {{ isAdmin ? '👑 Administrador' : '👤 Usuario' }}
+        </span>
+        <div class="user-info-display" *ngIf="userData">
+          <p class="user-name">{{ userData.nombre }}</p>
+          <p class="user-email">{{ userData.email }}</p>
+          <p class="user-company" *ngIf="userData.empresa">{{ userData.empresa }}</p>
+        </div>
+      </div>
+
+      <div class="menu-grid" [ngClass]="{'admin-grid': isAdmin, 'user-grid': !isAdmin}">
+        
+        <!-- VISTA PARA ADMINISTRADOR -->
+        <div *ngIf="isAdmin" class="admin-menu-container">
+          <div class="menu-option">
+            <div class="option-header">
+              <span class="option-emoji client-emoji">👥</span>
+              <p class="option-description">Administrar y registrar clientes frecuentes</p>
+            </div>
+            <ion-button color="warning" expand="block" routerLink="/clientes" class="option-button">
+              <span class="button-emoji">👥</span>
+              Clientes
+            </ion-button>
           </div>
-          <ion-button color="warning" expand="block" routerLink="/clientes" class="option-button">
-            <span class="button-emoji">👥</span>
-            Clientes
-          </ion-button>
+
+          <div class="menu-option">
+            <div class="option-header">
+              <span class="option-emoji product-emoji">📦</span>
+              <p class="option-description">Gestión completa de productos disponibles en tienda</p>
+            </div>
+            <ion-button color="danger" expand="block" routerLink="/productos" class="option-button">
+              <span class="button-emoji">📦</span>
+              Productos
+            </ion-button>
+          </div>
+
+          <div class="menu-option">
+            <div class="option-header">
+              <span class="option-emoji supplier-emoji">🚚</span>
+              <p class="option-description">Registrar y gestionar proveedores externos</p>
+            </div>
+            <ion-button color="tertiary" expand="block" routerLink="/proveedores" class="option-button">
+              <span class="button-emoji">🏭</span>
+              Proveedores
+            </ion-button>
+          </div>
+
+          <div class="menu-option">
+            <div class="option-header">
+              <span class="option-emoji order-emoji">📝</span>
+              <p class="option-description">Ver y crear pedidos realizados por clientes</p>
+            </div>
+            <ion-button color="medium" expand="block" routerLink="/pedidos" class="option-button">
+              <span class="button-emoji">📋</span>
+              Pedidos
+            </ion-button>
+          </div>
         </div>
 
-        <div class="menu-option">
-          <div class="option-header">
-            <span class="option-emoji product-emoji">📦</span>
-            <p class="option-description">Gestión de productos disponibles en tienda</p>
+        <!-- VISTA PARA USUARIO NORMAL -->
+        <div *ngIf="!isAdmin" class="user-menu-container">
+          <div class="menu-option">
+            <div class="option-header">
+              <span class="option-emoji product-emoji">📦</span>
+              <p class="option-description">Consulta nuestro catálogo de productos disponibles</p>
+            </div>
+            <ion-button color="danger" expand="block" routerLink="/productos" class="option-button">
+              <span class="button-emoji">📦</span>
+              Ver Productos
+            </ion-button>
           </div>
-          <ion-button color="danger" expand="block" routerLink="/productos" class="option-button">
-            <span class="button-emoji">📦</span>
-            Productos
-          </ion-button>
+
+          <!-- Mensaje para usuarios no admin -->
+          <div class="user-info">
+            <div class="info-box">
+              <span class="info-emoji">ℹ️</span>
+              <p class="info-text">
+                Como usuario puedes consultar nuestro catálogo de productos. 
+                Para realizar pedidos o consultas específicas, contacta a nuestro personal.
+              </p>
+              <div class="contact-info">
+                <p class="contact-item">📞 Teléfono: (555) 123-4567</p>
+                <p class="contact-item">📧 Email: ventas&#64;ferreteriaX.com</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="menu-option">
-          <div class="option-header">
-            <span class="option-emoji supplier-emoji">🚚</span>
-            <p class="option-description">Registrar proveedores externos</p>
-          </div>
-          <ion-button color="tertiary" expand="block" routerLink="/proveedores" class="option-button">
-            <span class="button-emoji">🏭</span>
-            Proveedores
-          </ion-button>
-        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
 
-        <div class="menu-option">
-          <div class="option-header">
-            <span class="option-emoji order-emoji">📝</span>
-            <p class="option-description">Ver y crear pedidos realizados por clientes</p>
-          </div>
-          <ion-button color="medium" expand="block" routerLink="/pedidos" class="option-button">
-            <span class="button-emoji">📋</span>
-            Pedidos
-          </ion-button>
+  <!-- Descripción de la ferretería - MOVIDO ABAJO -->
+  <ion-card class="info-card">
+    <ion-card-header class="info-header">
+      <ion-card-title class="info-title">
+        <span class="info-icon">🏪</span>
+        Acerca de Ferretería X
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content class="info-content">
+      <p class="info-description">
+        Somos una ferretería especializada con más de 20 años de experiencia en el mercado. 
+        Ofrecemos herramientas de alta calidad, materiales de construcción, productos de jardinería 
+        y todo lo necesario para tus proyectos de hogar y construcción. Nuestro compromiso es 
+        brindar el mejor servicio y asesoría técnica especializada.
+      </p>
+      <div class="features-list">
+        <div class="feature-item">
+          <span class="feature-icon">✅</span>
+          <span>Productos de calidad garantizada</span>
         </div>
+        <div class="feature-item">
+          <span class="feature-icon">🚚</span>
+          <span>Entregas a domicilio</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🔧</span>
+          <span>Asesoría técnica especializada</span>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Mapa de ubicación - MOVIDO ABAJO -->
+  <ion-card class="map-card">
+    <ion-card-header class="map-header">
+      <ion-card-title class="map-title">
+        <span class="map-icon">📍</span>
+        Nuestra Ubicación
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content class="map-content">
+      <div class="mapa">
+        <iframe 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.066597426538!2d-74.04317374676681!3d4.657803346860412!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNA!5e0!3m2!1ses!2sco!4v1234567890123"
+          allowfullscreen="">
+        </iframe>
+        <p class="map-description">
+          <strong>Cómo llegar a nuestra empresa:</strong> 
+          Estamos ubicados en el corazón de la ciudad, cerca de todos los servicios.
+        </p>
       </div>
     </ion-card-content>
   </ion-card>
