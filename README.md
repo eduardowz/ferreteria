@@ -1,4 +1,4 @@
-# Ferrestor - U3 🛠️
+# Ferreteria X - U3 🛠️
 
 Aplicación multiplataforma desarrollada con **Ionic** para la gestión de inventario, ventas y clientes de ferreterías. Compatible con **Web** y **Android**.
 
