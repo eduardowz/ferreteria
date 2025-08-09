@@ -1,0 +1,540 @@
+// Variables para modo claro
+$light-theme: (
+  background: #f5f7fa,
+  text: #333333,
+  text-secondary: #666666,
+  card-bg: #ffffff,
+  card-border: #f0f0f0,
+  header-bg: linear-gradient(135deg, #ff9500 0%, #ff5e3a 100%),
+  footer-bg: #000000,
+  footer-text: rgba(255, 255, 255, 0.8),
+  button-text: #ffffff,
+  shadow: rgba(0, 0, 0, 0.1),
+  info-box-bg: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%),
+  info-box-border: rgba(63, 81, 181, 0.1),
+  map-description-bg: #f8f9fa,
+  map-description-border: #eeeeee
+);
+
+// Variables para modo oscuro
+$dark-theme: (
+  background: #121212,
+  text: #e0e0e0,
+  text-secondary: #a0aec0,
+  card-bg: #1e1e1e,
+  card-border: #333333,
+  header-bg: linear-gradient(135deg, #3a2e00 0%, #4a2218 100%),
+  footer-bg: #000000,
+  footer-text: #bbbbbb,
+  button-text: #ffffff,
+  shadow: rgba(0, 0, 0, 0.3),
+  info-box-bg: linear-gradient(135deg, #1a237e 0%, #4a148c 20%),
+  info-box-border: rgba(101, 31, 255, 0.1),
+  map-description-bg: #2d2d2d,
+  map-description-border: #444444
+);
+
+// Mixins reutilizables
+@mixin theme-properties($theme) {
+  @each $key, $value in $theme {
+    --#{$key}: #{$value};
+  }
+}
+
+// Aplicar tema claro por defecto
+:root {
+  @include theme-properties($light-theme);
+}
+
+// Aplicar tema oscuro si el sistema lo prefiere
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include theme-properties($dark-theme);
+  }
+}
+
+/* Estilos para el header (se mantienen igual) */
+.header-toolbar {
+  --background: var(--header-bg);
+  --color: white;
+  box-shadow: 0 4px 12px var(--shadow);
+  
+  .app-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    
+    .title-icon {
+      font-size: 24px;
+      margin-right: 10px;
+    }
+    
+    .title-text {
+      font-size: 1.1rem;
+    }
+  }
+  
+  .logout-button {
+    --padding-start: 8px;
+    --padding-end: 8px;
+    
+    .logout-emoji {
+      font-size: 15px;
+    }
+  }
+}
+
+/* Estilos para el contenido */
+.content-background {
+  --background: var(--background);
+  padding-bottom: 80px;
+}
+
+.hero-section {
+  text-align: center;
+  margin-bottom: 25px;
+  
+  .icon-container {
+    margin: 20px auto;
+    background: var(--header-bg);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+    
+    .main-emoji {
+      font-size: 40px;
+      color: white;
+    }
+  }
+  
+  .welcome-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  
+  .subtitle-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0;
+  }
+}
+
+/* Estilos para tarjetas (comunes a menu-card, info-card, map-card) */
+.menu-card, .info-card, .map-card {
+  border-radius: 15px;
+  box-shadow: 0 8px 20px var(--shadow);
+  margin-bottom: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px var(--shadow);
+  }
+  
+  ion-card-header {
+    padding-bottom: 5px;
+    text-align: center;
+    
+    ion-card-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      
+      .info-icon, .map-icon {
+        font-size: 24px;
+        color: #ff9500; // Color fijo para los iconos
+      }
+    }
+    
+    ion-card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  }
+  
+  ion-card-content {
+    padding-top: 0;
+    color: var(--text);
+  }
+}
+
+/* Estilos específicos para menu-card */
+.menu-card {
+  .card-content {
+    .role-indicator {
+      text-align: center;
+      margin-bottom: 15px;
+      
+      .role-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 10px;
+        
+        &.admin-badge {
+          background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+          box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        &.user-badge {
+          background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+          box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+      }
+      
+      .user-info-display {
+        background: rgba(var(--card-bg), 0.9);
+        border-radius: 10px;
+        padding: 10px 15px;
+        margin-top: 10px;
+        border: 1px solid var(--card-border);
+        
+        .user-name {
+          margin: 0;
+          font-weight: 600;
+          color: var(--text);
+          font-size: 1rem;
+        }
+        
+        .user-email, .user-company {
+          margin: 2px 0;
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+        }
+        
+        .user-company {
+          color: #ff9500; // Color fijo para la empresa
+          font-weight: 500;
+        }
+      }
+    }
+    
+    .menu-grid {
+      display: grid;
+      gap: 15px;
+      
+      &.admin-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+      
+      &.user-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .menu-option {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 2px 8px var(--shadow);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid var(--card-border);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 140px;
+        
+        &:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 6px 12px var(--shadow);
+        }
+        
+        .option-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          margin-bottom: 12px;
+          flex-grow: 1;
+          
+          .option-emoji {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+            
+            &.client-emoji { color: #ff9500; }
+            &.product-emoji { color: #ff5e3a; }
+            &.supplier-emoji { color: #5856d6; }
+            &.order-emoji { color: #8e8e93; }
+          }
+          
+          .option-description {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.4;
+          }
+        }
+        
+        .option-button {
+          --border-radius: 8px;
+          font-weight: 500;
+          height: 40px;
+          margin-top: auto;
+          --box-shadow: 0 2px 6px var(--shadow);
+          transition: transform 0.2s ease;
+          
+          .button-emoji {
+            margin-right: 6px;
+            font-size: 16px;
+          }
+          
+          &:hover {
+            transform: translateY(-2px);
+            --box-shadow: 0 4px 8px var(--shadow);
+          }
+        }
+      }
+      
+      .user-info {
+        grid-column: 1 / -1;
+        margin-top: 10px;
+        
+        .info-box {
+          background: var(--info-box-bg);
+          border-radius: 12px;
+          padding: 20px;
+          text-align: center;
+          border: 1px solid var(--info-box-border);
+          
+          .info-emoji {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 10px;
+          }
+          
+          .info-text {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+          }
+          
+          .contact-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(var(--text), 0.1);
+            
+            .contact-item {
+              margin: 5px 0;
+              font-size: 0.9rem;
+              color: var(--text-secondary);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Estilos específicos para info-card */
+.info-card {
+  .info-content {
+    .info-description {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      text-align: justify;
+      margin-bottom: 15px;
+    }
+    
+    .features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 15px;
+      
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        
+        .feature-icon {
+          font-size: 16px;
+          color: #4CAF50; // Color fijo para los iconos de features
+          min-width: 20px;
+        }
+      }
+    }
+  }
+}
+
+/* Estilos específicos para map-card */
+.map-card {
+  .map-content {
+    .mapa {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px var(--shadow);
+      
+      iframe {
+        width: 100%;
+        height: 250px;
+        border: none;
+        display: block;
+      }
+      
+      .map-description {
+        padding: 15px 20px;
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        background: var(--map-description-bg);
+        text-align: center;
+        border-top: 1px solid var(--map-description-border);
+        
+        strong {
+          color: var(--text);
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+
+/* Estilo para el botón de cerrar sesión */
+.logout-button {
+  --border-radius: 8px;
+  font-weight: 500;
+  margin-top: 10px;
+  --box-shadow: 0 4px 8px var(--shadow);
+  
+  .button-emoji {
+    margin-right: 8px;
+  }
+  
+  &:hover {
+    --box-shadow: 0 6px 12px var(--shadow);
+  }
+}
+
+/* Estilos para el footer */
+.app-footer {
+  background-color: #ffc409;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  
+  ion-toolbar {
+    --background: var(--footer-bg);
+    --color: var(--footer-text);
+    padding: 5px 0;
+  }
+  
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 20px;
+    
+    .footer-text {
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    
+    .footer-version {
+      font-size: 0.7rem;
+      margin: 5px 0 0;
+      opacity: 0.7;
+    }
+  }
+}
+
+/* Media queries para responsive */
+@media (max-width: 767px) {
+  .admin-menu-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+  }
+  
+  .option-emoji {
+    font-size: 28px;
+  }
+  
+  .option-description {
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-title {
+    font-size: 1.3rem;
+    
+    .title-icon {
+      font-size: 28px;
+    }
+  }
+  
+  .mapa iframe {
+    height: 300px;
+  }
+  
+  .features-list {
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    
+    .feature-item {
+      flex: 0 0 auto;
+      min-width: 200px;
+    }
+  }
+  
+  .admin-menu-container {
+    gap: 20px;
+  }
+  
+  .menu-option {
+    min-height: 160px;
+    padding: 20px;
+  }
+  
+  .option-emoji {
+    font-size: 36px;
+  }
+  
+  .option-description {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mapa iframe {
+    height: 350px;
+  }
+  
+  .admin-menu-container {
+    gap: 25px;
+  }
+  
+  .menu-option {
+    min-height: 180px;
+    padding: 25px;
+  }
+}
