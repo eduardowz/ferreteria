@@ -11,16 +11,31 @@
       </div>
 
       <!-- Selector de tipo de entrada -->
-      <ion-segment [(ngModel)]="loginType" class="login-type-segment">
-        <ion-segment-button value="admin">
-          <ion-label>Administrador</ion-label>
-          <ion-icon name="shield-checkmark-outline"></ion-icon>
-        </ion-segment-button>
-        <ion-segment-button value="user">
-          <ion-label>Usuario</ion-label>
-          <ion-icon name="person-outline"></ion-icon>
-        </ion-segment-button>
-      </ion-segment>
+      <div class="toggle-container">
+        <div class="toggle-buttons">
+          <ion-button 
+            [color]="loginType === 'admin' ? 'danger' : 'medium'" 
+            (click)="loginType = 'admin'"
+            fill="solid"
+            shape="round"
+            class="toggle-button"
+          >
+            <ion-icon name="shield-checkmark-outline" slot="start"></ion-icon>
+            Administrador
+          </ion-button>
+          
+          <ion-button 
+            [color]="loginType === 'user' ? 'primary' : 'medium'" 
+            (click)="loginType = 'user'"
+            fill="solid"
+            shape="round"
+            class="toggle-button"
+          >
+            <ion-icon name="person-outline" slot="start"></ion-icon>
+            Usuario
+          </ion-button>
+        </div>
+      </div>
 
       <!-- Información de credenciales de prueba -->
       <ion-card class="demo-credentials" *ngIf="loginType">

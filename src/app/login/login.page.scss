@@ -270,12 +270,38 @@ $transition: all 0.3s ease;
   .footer-version { font-weight: 600; }
 }
 
+.toggle-container {
+  width: 100%;
+  margin-bottom: 20px;
+  
+  .toggle-buttons {
+    display: flex;
+    flex-direction: row; // Siempre en horizontal
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap; // Permite que se ajusten si no hay espacio
+    
+    .toggle-button {
+      flex: 1 1 auto; // Crecen y se ajustan
+      min-width: 150px; // Ancho mínimo para mantener legibilidad
+      max-width: 200px; // Ancho máximo para pantallas grandes
+      white-space: nowrap; // Evita que el texto se divida en varias líneas
+      
+      ion-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
 // Media queries
 @media (max-width: 480px) {
   .login-card { padding: 20px; }
   .login-title { font-size: 24px; }
   .login-subtitle, .demo-title { font-size: 14px; }
   .section-divider .divider-text { font-size: 13px; }
+  .toggle-container .toggle-buttons {flex-direction: row; 
+  .toggle-button {min-width: 120px; font-size: 14px;}}
 }
 
 // Animaciones
