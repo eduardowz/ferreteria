@@ -234,7 +234,7 @@
 
 .user-menu-container {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 15px;
   margin-top: 15px;
 }
@@ -465,6 +465,10 @@
     grid-template-rows: repeat(4, 1fr);
   }
   
+  .user-menu-container {
+    grid-template-columns: 1fr;
+  }
+  
   .option-emoji {
     font-size: 28px;
   }
@@ -502,6 +506,10 @@
     gap: 20px;
   }
   
+  .user-menu-container {
+    gap: 20px;
+  }
+  
   .menu-option {
     min-height: 160px;
     padding: 20px;
@@ -522,6 +530,10 @@
   }
   
   .admin-menu-container {
+    gap: 25px;
+  }
+  
+  .user-menu-container {
     gap: 25px;
   }
   

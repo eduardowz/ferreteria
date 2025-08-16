@@ -1,124 +1,307 @@
 <ion-header>
-  <ion-toolbar color="tertiary" class="header-toolbar">
+  <ion-toolbar color="warning">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home" class="back-button" text=""></ion-back-button>
+      <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title class="ion-text-center page-title">
-      <span class="title-icon">🏢</span>
-      Gestión de Proveedores
+    <ion-title>
+      <!-- Título dinámico según el rol -->
+      <span *ngIf="isAdmin">🏭 Gestión de Proveedores</span>
+      <span *ngIf="!isAdmin">📊 Mis Pedidos y Proveedores</span>
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding supplier-content">
-  <!-- Botón para mostrar/ocultar formulario -->
-  <ion-button expand="block" color="tertiary" (click)="mostrarFormulario = !mostrarFormulario" class="toggle-form-button">
-    <span slot="start" class="emoji-icon">{{ mostrarFormulario ? '❌' : (nuevoProveedor.id ? '✏️' : '➕') }}</span>
-    {{ mostrarFormulario ? 'Cancelar' : (nuevoProveedor.id ? 'Editar Proveedor' : 'Agregar Proveedor') }}
-  </ion-button>
+<ion-content class="ion-padding">
 
-  <!-- Formulario de agregar/editar proveedor -->
-  <ion-card *ngIf="mostrarFormulario" class="form-card">
-    <ion-card-header class="form-header">
-      <ion-card-title class="form-title">
-        <span class="emoji-icon">📝</span>
-        {{ nuevoProveedor.id !== 0 ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
-      </ion-card-title>
-    </ion-card-header>
+  <!-- =================== VISTA PARA ADMINISTRADORES =================== -->
+  <div *ngIf="isAdmin">
     
-    <ion-card-content class="form-content">
-      <ion-item lines="full" class="form-item">
-        <ion-label position="floating" class="input-label">Nombre</ion-label>
-        <ion-input [(ngModel)]="nuevoProveedor.nombre" class="custom-input"></ion-input>
-        <span slot="start" class="input-emoji">👤</span>
-      </ion-item>
+    <!-- Estadísticas rápidas para admin -->
+    <ion-card class="stats-card" *ngIf="comprasFiltradas.length > 0">
+      <ion-card-header>
+        <ion-card-title>
+          <span class="emoji-icon">📊</span>
+          Estadísticas Rápidas
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-emoji">⏳</span>
+            <span class="stat-count">{{ obtenerComprasPorEstado('Pendiente') }}</span>
+            <span class="stat-title">Pendientes</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-emoji">🚚</span>
+            <span class="stat-count">{{ obtenerComprasPorEstado('Enviado') }}</span>
+            <span class="stat-title">Enviados</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-emoji">✅</span>
+            <span class="stat-count">{{ obtenerComprasPorEstado('Entregado') }}</span>
+            <span class="stat-title">Entregados</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-emoji">🎁</span>
+            <span class="stat-count">${{ calcularTotalDescuentosAplicados().toFixed(2) }}</span>
+            <span class="stat-title">Descuentos</span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
 
-      <ion-item lines="full" class="form-item">
-        <ion-label position="floating" class="input-label">Teléfono</ion-label>
-        <ion-input [(ngModel)]="nuevoProveedor.telefono" class="custom-input"></ion-input>
-        <span slot="start" class="input-emoji">📞</span>
-      </ion-item>
+    <!-- Gestión de proveedores (funcionalidad original) -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Gestión de Proveedores</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button 
+          expand="block" 
+          color="primary" 
+          (click)="mostrarFormulario = !mostrarFormulario">
+          <ion-icon name="add" slot="start"></ion-icon>
+          {{ mostrarFormulario ? 'Cancelar' : 'Agregar Proveedor' }}
+        </ion-button>
 
-      <ion-item lines="full" class="form-item">
-        <ion-label position="floating" class="input-label">Empresa</ion-label>
-        <ion-input [(ngModel)]="nuevoProveedor.empresa" class="custom-input"></ion-input>
-        <span slot="start" class="input-emoji">🏭</span>
-      </ion-item>
+        <!-- Formulario de proveedor -->
+        <div *ngIf="mostrarFormulario" class="form-container">
+          <ion-item>
+            <ion-label position="stacked">Nombre</ion-label>
+            <ion-input [(ngModel)]="nuevoProveedor.nombre" placeholder="Nombre del proveedor"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Teléfono</ion-label>
+            <ion-input [(ngModel)]="nuevoProveedor.telefono" placeholder="Teléfono"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Empresa</ion-label>
+            <ion-input [(ngModel)]="nuevoProveedor.empresa" placeholder="Empresa"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Correo</ion-label>
+            <ion-input [(ngModel)]="nuevoProveedor.correo" placeholder="Correo electrónico"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Fecha</ion-label>
+            <ion-input [(ngModel)]="nuevoProveedor.fecha" type="date"></ion-input>
+          </ion-item>
 
-      <ion-item lines="full" class="form-item">
-        <ion-label position="floating" class="input-label">Correo</ion-label>
-        <ion-input type="email" [(ngModel)]="nuevoProveedor.correo" class="custom-input"></ion-input>
-        <span slot="start" class="input-emoji">✉️</span>
-      </ion-item>
+          <ion-button 
+            expand="block" 
+            color="success" 
+            (click)="guardarProveedor()" 
+            style="margin-top: 16px;">
+            <ion-icon name="save" slot="start"></ion-icon>
+            Guardar
+          </ion-button>
+        </div>
 
-      <ion-item lines="full" class="form-item">
-        <ion-label position="floating" class="input-label">Fecha de Registro</ion-label>
-        <ion-input type="date" [(ngModel)]="nuevoProveedor.fecha" class="custom-input"></ion-input>
-        <span slot="start" class="input-emoji">📅</span>
-      </ion-item>
+        <!-- Lista de proveedores -->
+        <ion-list *ngIf="proveedores.length > 0">
+          <ion-item *ngFor="let proveedor of proveedores; let i = index">
+            <ion-label>
+              <h3>{{ proveedor.nombre }}</h3>
+              <p>{{ proveedor.empresa }} - {{ proveedor.telefono }}</p>
+              <p>{{ proveedor.correo }} - {{ proveedor.fecha }}</p>
+            </ion-label>
+            <ion-button fill="clear" color="primary" (click)="editarProveedor(i)">
+              <ion-icon name="create"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" color="danger" (click)="eliminarProveedor(i)">
+              <ion-icon name="trash"></ion-icon>
+            </ion-button>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
 
+  </div>
+
+  <!-- =================== VISTA PARA USUARIOS =================== -->
+  <div *ngIf="!isAdmin">
+    
+    <!-- Header de bienvenida al usuario -->
+    <div class="user-welcome">
+      <div class="user-name">📊 Estado de mis Pedidos</div>
+      <div class="user-subtitle">Revisa el estado de tus compras y conoce a nuestros proveedores de confianza</div>
+    </div>
+
+    <!-- Estadísticas de pedidos del usuario -->
+    <ion-card class="stats-card" *ngIf="misCompras.length > 0">
+      <ion-card-header>
+        <ion-card-title>
+          <span class="emoji-icon">📈</span>
+          Estado de mis Pedidos
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="stats-grid">
+          <div class="stat-box pending">
+            <span class="stat-emoji">⏳</span>
+            <span class="stat-count">{{ obtenerMisPedidosPorEstado('Pendiente') }}</span>
+            <span class="stat-title">En Proceso</span>
+          </div>
+          <div class="stat-box shipped">
+            <span class="stat-emoji">🚚</span>
+            <span class="stat-count">{{ obtenerMisPedidosPorEstado('Enviado') }}</span>
+            <span class="stat-title">Enviados</span>
+          </div>
+          <div class="stat-box delivered">
+            <span class="stat-emoji">✅</span>
+            <span class="stat-count">{{ obtenerMisPedidosPorEstado('Entregado') }}</span>
+            <span class="stat-title">Entregados</span>
+          </div>
+          <div class="stat-box discount">
+            <span class="stat-emoji">🎁</span>
+            <span class="stat-count">{{ calcularDescuentoProximoEnvio() }}%</span>
+            <span class="stat-title">Próximo Descuento</span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Información de descuento próximo envío -->
+    <ion-card class="discount-info-card" *ngIf="misCompras.length > 0">
+      <ion-card-header>
+        <ion-card-title>
+          <span class="emoji-icon">🎯</span>
+          Programa de Descuentos
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="discount-info">
+          <div class="current-progress">
+            <span class="progress-label">Pedidos realizados: <strong>{{ misCompras.length }}</strong></span>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="(misCompras.length / obtenerPedidosParaDescuento()) * 100"></div>
+            </div>
+            <span class="progress-text">{{ misCompras.length }}/{{ obtenerPedidosParaDescuento() }} pedidos</span>
+          </div>
+          
+          <div class="discount-message">
+            <span *ngIf="calcularDescuentoProximoEnvio() > 0" class="discount-earned">
+              🎉 ¡Has ganado {{ calcularDescuentoProximoEnvio() }}% de descuento en tu próxima compra!
+            </span>
+            <span *ngIf="calcularDescuentoProximoEnvio() === 0" class="discount-pending">
+              📦 Realiza {{ obtenerPedidosParaDescuento() - misCompras.length }} pedidos más para obtener un descuento especial
+            </span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Resumen rápido de pedidos recientes -->
+    <ion-card class="recent-orders-card" *ngIf="misCompras.length > 0">
+      <ion-card-header>
+        <ion-card-title>
+          <span class="emoji-icon">📦</span>
+          Mis Pedidos Recientes
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="recent-orders">
+          <div *ngFor="let compra of obtenerPedidosRecientes(); let i = index" class="order-summary">
+            <div class="order-info">
+              <div class="order-header">
+                <span class="order-emoji">{{ obtenerEmojiEstado(compra.estado) }}</span>
+                <span class="order-id">Pedido #{{ compra.id }}</span>
+                <ion-badge [color]="obtenerColorEstado(compra.estado)" class="order-status">
+                  {{ compra.estado }}
+                </ion-badge>
+              </div>
+              <div class="order-details">
+                <span class="order-date">{{ formatearFecha(compra.fecha) }}</span>
+                <span class="order-total">${{ compra.total.toFixed(2) }}</span>
+              </div>
+              <div class="order-products">
+                {{ obtenerResumenProductos(compra.productos) }}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <ion-button 
+          expand="block" 
+          fill="outline" 
+          color="primary"
+          routerLink="/compras"
+          style="margin-top: 15px;">
+          <ion-icon name="list-outline" slot="start"></ion-icon>
+          Ver todos mis pedidos
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Información de proveedores -->
+    <ion-card class="info-card">
+      <ion-card-header>
+        <ion-card-title>
+          <span class="emoji-icon">🏭</span>
+          Nuestros Proveedores de Confianza
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="info-content">
+          <div class="feature-item">
+            <span class="feature-icon">✅</span>
+            <span>Productos de calidad certificada</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🚚</span>
+            <span>Entregas puntuales y confiables</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">💰</span>
+            <span>Precios competitivos del mercado</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🔧</span>
+            <span>Soporte técnico especializado</span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+
+
+    <!-- Estado vacío cuando no hay pedidos -->
+    <div *ngIf="misCompras.length === 0" class="empty-state">
+      <span class="empty-emoji">📦</span>
+      <h3>Aún no tienes pedidos</h3>
+      <p>¡Realiza tu primera compra y comienza a ganar descuentos!</p>
+      
+      <ion-card class="empty-card">
+        <ion-card-header>
+          <ion-card-title>🛒 ¡Comienza a comprar!</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Descubre nuestros productos y aprovecha las ofertas especiales para nuevos clientes.</p>
+          
+          <ion-button expand="block" color="primary" routerLink="/productos">
+            <ion-icon name="storefront-outline" slot="start"></ion-icon>
+            Ver Productos
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Botón para refrescar -->
+    <div class="refresh-section">
       <ion-button 
         expand="block" 
-        color="tertiary" 
-        (click)="guardarProveedor()" 
-        class="submit-button"
-        [disabled]="!nuevoProveedor.nombre || !nuevoProveedor.telefono || !nuevoProveedor.empresa"
-      >
-        <span slot="start" class="emoji-icon">
-          {{ nuevoProveedor.id !== 0 ? '💾' : '➕' }}
-        </span>
-        {{ nuevoProveedor.id !== 0 ? 'Guardar Cambios' : 'Agregar Proveedor' }}
+        fill="outline" 
+        color="medium"
+        (click)="refrescarDatos()">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        Actualizar información
       </ion-button>
-    </ion-card-content>
-  </ion-card>
+    </div>
 
-  <!-- Lista de proveedores -->
-  <ion-card class="supplier-list-card">
-    <ion-card-header class="list-header">
-      <ion-card-title class="list-title">
-        <span class="emoji-icon">📋</span>
-        Proveedores Registrados
-      </ion-card-title>
-      <ion-note class="supplier-count">{{proveedores.length}} proveedor(es)</ion-note>
-    </ion-card-header>
-    
-    <ion-list lines="none" class="supplier-list">
-      <ion-item *ngFor="let p of proveedores; let i = index" class="supplier-item">
-        <ion-avatar slot="start" class="supplier-avatar">
-          <span class="avatar-emoji">🏢</span>
-        </ion-avatar>
-        
-        <ion-label class="supplier-info">
-          <h2 class="supplier-name">{{ p.nombre }} <span class="supplier-id">(ID: {{ p.id }})</span></h2>
-          <div class="supplier-details">
-            <p class="supplier-detail">
-              <span class="detail-emoji">📞</span>
-              {{ p.telefono }}
-            </p>
-            <p class="supplier-detail">
-              <span class="detail-emoji">🏭</span>
-              {{ p.empresa }}
-            </p>
-            <p class="supplier-detail">
-              <span class="detail-emoji">✉️</span>
-              {{ p.correo }}
-            </p>
-            <p class="supplier-detail">
-              <span class="detail-emoji">📅</span>
-              {{ p.fecha | date:'mediumDate' }}
-            </p>
-          </div>
-        </ion-label>
-        
-        <ion-buttons slot="end" class="action-buttons">
-          <ion-button fill="clear" color="medium" (click)="editarProveedor(i)" class="edit-button">
-            <span class="action-emoji">✏️</span>
-          </ion-button>
-          <ion-button fill="clear" color="danger" (click)="eliminarProveedor(i)" class="delete-button">
-            <span class="action-emoji">🗑️</span>
-          </ion-button>
-        </ion-buttons>
-      </ion-item>
-    </ion-list>
-  </ion-card>
+  </div>
+
 </ion-content>

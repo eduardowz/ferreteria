@@ -19,6 +19,7 @@ interface Producto {
   fecha: string;
   proveedor: string;
   image?: string;
+  cantidadTemporal?: number; // Nueva propiedad para cantidad temporal
 }
 
 interface Usuario {
@@ -27,6 +28,14 @@ interface Usuario {
   email: string;
   role: 'admin' | 'user';
   rol: 'admin' | 'usuario';
+}
+
+interface DatosTarjeta {
+  numero: string;
+  titular: string;
+  vencimiento: string;
+  cvv: string;
+  email: string;
 }
 
 @Component({
@@ -59,17 +68,24 @@ export class ProductosPage implements OnInit, OnDestroy {
   vistaActual: 'grid' | 'lista' = 'grid';
   nuevoProducto: Producto = this.crearProductoVacio();
 
-  // NUEVAS FUNCIONALIDADES
-  // Buscador
+  // Funcionalidades de búsqueda y pago
   terminoBusqueda: string = '';
-  
-  // Sistema de pago
   mostrarPago: boolean = false;
   metodoPagoSeleccionado: MetodoPago | null = null;
   
   // Información de descuento
   montoMinimoDescuento: number = 500;
   porcentajeDescuento: number = 10;
+
+  // Nuevas propiedades para el pago mejorado
+  dineroRecibido: number = 0;
+  datosTarjeta: DatosTarjeta = {
+    numero: '',
+    titular: '',
+    vencimiento: '',
+    cvv: '',
+    email: ''
+  };
 
   constructor(
     private toastController: ToastController,
@@ -102,7 +118,7 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
-  // NUEVO: Cargar usuario actual con verificación mejorada
+  // Cargar usuario actual con verificación mejorada
   cargarUsuarioActual() {
     const userData = localStorage.getItem('userData');
     if (userData) {
@@ -117,8 +133,6 @@ export class ProductosPage implements OnInit, OnDestroy {
         };
         
         console.log('Usuario cargado en productos:', this.usuarioActual);
-        console.log('Role:', user.role);
-        console.log('Rol:', user.rol);
         
       } catch (error) {
         console.error('Error al parsear datos del usuario:', error);
@@ -151,13 +165,10 @@ export class ProductosPage implements OnInit, OnDestroy {
       try {
         const user = JSON.parse(userData);
         
-        // VERIFICACIÓN MEJORADA: Comprobar ambos campos de rol
+        // Verificación mejorada: Comprobar ambos campos de rol
         this.esAdmin = (user.role === 'admin') || (user.rol === 'admin');
         
         console.log('Verificando rol en productos:');
-        console.log('User object:', user);
-        console.log('user.role:', user.role);
-        console.log('user.rol:', user.rol);
         console.log('Es admin?:', this.esAdmin);
         
       } catch (error) {
@@ -234,6 +245,13 @@ export class ProductosPage implements OnInit, OnDestroy {
       this.guardarEnLocalStorage();
     }
     
+    // Inicializar cantidades temporales
+    this.productos.forEach(producto => {
+      if (!producto.cantidadTemporal) {
+        producto.cantidadTemporal = 1;
+      }
+    });
+    
     // Inicializar productos filtrados
     this.productosFiltrados = [...this.productos];
   }
@@ -245,10 +263,53 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
-  // NUEVOS MÉTODOS PARA EL BUSCADOR
+  // MÉTODOS PARA CANTIDAD TEMPORAL (con validaciones mejoradas)
+  aumentarCantidadTemporal(index: number) {
+    if (!this.productosFiltrados || index < 0 || index >= this.productosFiltrados.length) {
+      return;
+    }
+    
+    const producto = this.productosFiltrados[index];
+    if (!producto) {
+      return;
+    }
+    
+    if (!producto.cantidadTemporal) {
+      producto.cantidadTemporal = 1;
+    }
+    if (producto.cantidadTemporal < producto.stock) {
+      producto.cantidadTemporal++;
+    }
+  }
+
+  disminuirCantidadTemporal(index: number) {
+    if (!this.productosFiltrados || index < 0 || index >= this.productosFiltrados.length) {
+      return;
+    }
+    
+    const producto = this.productosFiltrados[index];
+    if (!producto) {
+      return;
+    }
+    
+    if (!producto.cantidadTemporal) {
+      producto.cantidadTemporal = 1;
+    }
+    if (producto.cantidadTemporal > 1) {
+      producto.cantidadTemporal--;
+    }
+  }
+
+  // MÉTODOS PARA EL BUSCADOR
   buscarProductos() {
     if (!this.terminoBusqueda.trim()) {
       this.productosFiltrados = [...this.productos];
+      // Reinicializar cantidades temporales
+      this.productosFiltrados.forEach(producto => {
+        if (!producto.cantidadTemporal) {
+          producto.cantidadTemporal = 1;
+        }
+      });
       return;
     }
 
@@ -260,8 +321,17 @@ export class ProductosPage implements OnInit, OnDestroy {
       producto.proveedor.toLowerCase().includes(termino)
     );
 
+    // Reinicializar cantidades temporales en productos filtrados
+    this.productosFiltrados.forEach(producto => {
+      if (!producto.cantidadTemporal) {
+        producto.cantidadTemporal = 1;
+      }
+    });
+
     if (this.productosFiltrados.length === 0) {
       this.mostrarToast(`No se encontraron productos con "${this.terminoBusqueda}"`, 'warning');
+    } else {
+      this.mostrarToast(`${this.productosFiltrados.length} productos encontrados`, 'success');
     }
   }
 
@@ -271,251 +341,59 @@ export class ProductosPage implements OnInit, OnDestroy {
     this.mostrarToast('Búsqueda limpiada', 'medium');
   }
 
-  // NUEVOS MÉTODOS PARA EL SISTEMA DE PAGO
-  mostrarOpcionesPago() {
-    if (this.carrito.length === 0) {
-      this.mostrarToast('El carrito está vacío', 'warning');
-      return;
-    }
-    this.mostrarPago = true;
-  }
-
-  cerrarPago() {
-    this.mostrarPago = false;
-    this.metodoPagoSeleccionado = null;
-  }
-
-  seleccionarMetodoPago(metodo: MetodoPago) {
-    this.metodoPagoSeleccionado = metodo;
-  }
-
-  // MÉTODO CORREGIDO: confirmarCompra con guardado para panel de admin
-  async confirmarCompra() {
-    if (!this.metodoPagoSeleccionado) {
-      this.mostrarToast('Por favor selecciona un método de pago', 'warning');
+  // MÉTODO MEJORADO PARA AGREGAR AL CARRITO CON CANTIDAD (con validaciones)
+  agregarAlCarritoConCantidad(producto: Producto, index: number) {
+    if (!producto) {
+      this.mostrarToast('Error: Producto no encontrado', 'danger');
       return;
     }
 
-    const resultado = this.carritoService.procesarCompra(this.metodoPagoSeleccionado);
-    
-    if (!resultado.exito) {
-      this.mostrarToast(resultado.mensaje, 'danger');
-      return;
-    }
-
-    // Reducir el stock de los productos
-    this.carrito.forEach(item => {
-      const producto = this.productos.find(p => p.id === item.id);
-      if (producto) {
-        producto.stock -= item.cantidad;
-      }
-    });
-    
-    this.guardarEnLocalStorage();
-    
-    // Actualizar productos filtrados si hay búsqueda activa
-    this.buscarProductos();
-    
-    // NUEVO: Guardar la compra para el panel de administración
-    this.guardarCompraRealizada(resultado.resumen!);
-    
-    // Vaciar carrito
-    this.carritoService.vaciarCarrito();
-    
-    // Cerrar interfaces
-    this.cerrarPago();
-    this.mostrarCarrito = false;
-    
-    // Mostrar mensaje de éxito con detalles
-    const resumen = resultado.resumen!;
-    let mensaje = `¡Compra exitosa!`;
-    
-    if (resumen.aplicaDescuento) {
-      mensaje += ` Se aplicó descuento del ${this.porcentajeDescuento}% (Ahorraste $${resumen.descuento.toFixed(2)})`;
-    }
-    
-    mensaje += ` Total pagado: $${resumen.total.toFixed(2)} - Método: ${resumen.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Efectivo'}`;
-    
-    this.mostrarToast(mensaje, 'success');
-  }
-
-  // NUEVO: Método para guardar compra en el panel de administración
-  private guardarCompraRealizada(resumen: any) {
-    // Usar datos del usuario actual cargado
-    let nombreCliente = this.usuarioActual.nombre || 'Usuario Invitado';
-    let usuarioId = this.usuarioActual.id || 'guest-user';
-
-    // Crear el objeto de compra para el panel de admin
-    const compraRealizada = {
-      id: Date.now(),
-      cliente: nombreCliente,
-      usuarioId: usuarioId,
-      productos: this.carrito.map(item => ({
-        id: item.id,
-        nombre: item.nombre,
-        precio: item.precio,
-        cantidad: item.cantidad,
-        subtotalProducto: item.total
-      })),
-      subtotal: resumen.subtotal,
-      descuento: resumen.descuento,
-      total: resumen.total,
-      metodoPago: resumen.metodoPago,
-      fecha: new Date().toISOString(),
-      estado: 'Pendiente',
-      aplicaDescuento: resumen.aplicaDescuento
-    };
-
-    // Obtener compras existentes
-    const comprasExistentes = localStorage.getItem('compras_realizadas');
-    let compras = [];
-    
-    if (comprasExistentes) {
-      try {
-        compras = JSON.parse(comprasExistentes);
-      } catch (error) {
-        console.error('Error al parsear compras existentes:', error);
-        compras = [];
-      }
-    }
-    
-    // Agregar la nueva compra
-    compras.push(compraRealizada);
-    
-    // Guardar en localStorage
-    localStorage.setItem('compras_realizadas', JSON.stringify(compras));
-    
-    console.log('Compra guardada para panel de administración:', compraRealizada);
-  }
-
-  // MÉTODOS ACTUALIZADOS PARA USAR EL SERVICIO
-  calcularSubtotal(): number {
-    return this.carritoService.calcularSubtotal();
-  }
-
-  calcularDescuento(): number {
-    return this.carritoService.calcularDescuento();
-  }
-
-  calcularTotalCarrito(): number {
-    return this.carritoService.calcularTotal();
-  }
-
-  aplicaDescuento(): boolean {
-    return this.carritoService.aplicaDescuento();
-  }
-
-  obtenerCantidadTotal(): number {
-    return this.carritoService.obtenerCantidadTotal();
-  }
-
-  // MÉTODOS EXISTENTES (con verificaciones de permisos mejoradas)
-  crearProductoVacio(): Producto {
-    return {
-      id: 0,
-      nombre: '',
-      descripcion: '',
-      precio: 0,
-      stock: 0,
-      categoria: '',
-      fecha: '',
-      proveedor: '',
-      image: ''
-    };
-  }
-
-  cambiarVista(vista: 'grid' | 'lista') {
-    this.vistaActual = vista;
-  }
-
-  guardarProducto() {
-    console.log('Intentando guardar producto. Es admin?:', this.esAdmin);
-    
-    if (!this.esAdmin) {
-      this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
-      console.log('Permisos denegados para guardar producto');
-      return;
-    }
-
-    const p = this.nuevoProducto;
-
-    if (
-      p.nombre &&
-      p.descripcion &&
-      p.precio > 0 &&
-      p.stock >= 0 &&
-      p.categoria &&
-      p.fecha &&
-      p.proveedor
-    ) {
-      if (p.id === 0) {
-        p.id = this.productos.length > 0 ? Math.max(...this.productos.map(x => x.id)) + 1 : 1;
-        this.productos.push({ ...p });
-        this.mostrarToast('Producto agregado exitosamente', 'success');
-      } else {
-        const index = this.productos.findIndex(prod => prod.id === p.id);
-        if (index > -1) {
-          this.productos[index] = { ...p };
-          this.mostrarToast('Producto actualizado exitosamente', 'success');
-        }
-      }
-
-      this.guardarEnLocalStorage();
-      this.buscarProductos(); // Actualizar productos filtrados
-      this.mostrarFormulario = false;
-      this.resetearFormulario();
-    } else {
-      this.mostrarToast('Por favor completa todos los campos incluyendo el proveedor', 'warning');
-    }
-  }
-
-  editarProducto(index: number) {
-    console.log('Intentando editar producto. Es admin?:', this.esAdmin);
-    
-    if (!this.esAdmin) {
-      this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
-      console.log('Permisos denegados para editar producto');
-      return;
-    }
-
-    // Buscar el producto en la lista filtrada
-    const producto = this.productosFiltrados[index];
-    this.nuevoProducto = { ...producto };
-    this.mostrarFormulario = true;
-  }
-
-  eliminarProducto(index: number) {
-    console.log('Intentando eliminar producto. Es admin?:', this.esAdmin);
-    
-    if (!this.esAdmin) {
-      this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
-      console.log('Permisos denegados para eliminar producto');
-      return;
-    }
-
-    const producto = this.productosFiltrados[index];
-    const confirmado = confirm(`¿Eliminar el producto "${producto.nombre}"?`);
-    
-    if (confirmado) {
-      // Encontrar el índice en la lista original
-      const indiceOriginal = this.productos.findIndex(p => p.id === producto.id);
-      if (indiceOriginal > -1) {
-        this.productos.splice(indiceOriginal, 1);
-        this.guardarEnLocalStorage();
-        this.buscarProductos(); // Actualizar productos filtrados
-        this.resetearFormulario();
-        this.mostrarFormulario = false;
-        this.mostrarToast('Producto eliminado exitosamente', 'success');
-      }
-    }
-  }
-
-  agregarAlCarrito(producto: Producto) {
-    console.log('Intentando agregar al carrito. Es admin?:', this.esAdmin);
-    
     if (this.esAdmin) {
       this.mostrarToast('Los administradores no pueden agregar productos al carrito', 'warning');
-      console.log('Admin intentó agregar producto al carrito');
+      return;
+    }
+
+    if (producto.stock === 0) {
+      this.mostrarToast('Este producto no tiene stock disponible', 'danger');
+      return;
+    }
+
+    const cantidadSeleccionada = producto.cantidadTemporal || 1;
+    
+    // Verificar si ya existe en el carrito
+    const itemExistente = this.carrito.find(item => item.id === producto.id);
+    const cantidadActualEnCarrito = itemExistente ? itemExistente.cantidad : 0;
+    
+    if (cantidadActualEnCarrito + cantidadSeleccionada > producto.stock) {
+      this.mostrarToast(`No hay suficiente stock. Stock disponible: ${producto.stock - cantidadActualEnCarrito}`, 'warning');
+      return;
+    }
+
+    // Agregar al carrito con la cantidad seleccionada
+    for (let i = 0; i < cantidadSeleccionada; i++) {
+      const success = this.carritoService.agregarProducto({
+        id: producto.id,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        cantidad: 1
+      });
+      
+      if (!success) {
+        this.mostrarToast('Error al agregar producto al carrito', 'danger');
+        return;
+      }
+    }
+
+    // Resetear cantidad temporal
+    producto.cantidadTemporal = 1;
+    
+    this.mostrarToast(`${cantidadSeleccionada} x ${producto.nombre} agregado(s) al carrito`, 'success');
+  }
+
+  // MÉTODO ORIGINAL PARA AGREGAR AL CARRITO (una unidad)
+  agregarAlCarrito(producto: Producto) {
+    if (this.esAdmin) {
+      this.mostrarToast('Los administradores no pueden agregar productos al carrito', 'warning');
       return;
     }
 
@@ -538,6 +416,251 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
+  // MÉTODOS PARA FORMATEAR DATOS DE TARJETA
+  formatearNumeroTarjeta(event: any) {
+    let valor = event.target.value.replace(/\s/g, '');
+    let valorFormateado = valor.match(/.{1,4}/g)?.join(' ') || valor;
+    
+    if (valorFormateado.length > 19) {
+      valorFormateado = valorFormateado.substring(0, 19);
+    }
+    
+    this.datosTarjeta.numero = valorFormateado;
+    event.target.value = valorFormateado;
+  }
+
+  formatearVencimiento(event: any) {
+    let valor = event.target.value.replace(/\D/g, '');
+    
+    if (valor.length >= 2) {
+      valor = valor.substring(0, 2) + '/' + valor.substring(2, 4);
+    }
+    
+    this.datosTarjeta.vencimiento = valor;
+    event.target.value = valor;
+  }
+
+  // MÉTODO PARA DETECTAR TIPO DE TARJETA
+  detectarTipoTarjeta(): string {
+    const numero = this.datosTarjeta.numero.replace(/\s/g, '');
+    
+    if (numero.startsWith('4')) {
+      return 'Visa';
+    } else if (numero.startsWith('5') || numero.startsWith('2')) {
+      return 'Mastercard';
+    } else if (numero.startsWith('34') || numero.startsWith('37')) {
+      return 'American Express';
+    }
+    
+    return 'Desconocida';
+  }
+
+  // MÉTODOS PARA EL SISTEMA DE PAGO
+  mostrarOpcionesPago() {
+    if (this.carrito.length === 0) {
+      this.mostrarToast('El carrito está vacío', 'warning');
+      return;
+    }
+    this.mostrarPago = true;
+  }
+
+  seleccionarMetodoPago(metodo: MetodoPago) {
+    this.metodoPagoSeleccionado = metodo;
+  }
+
+  // MÉTODO PARA VALIDAR SI SE PUEDE CONFIRMAR LA COMPRA
+  puedeConfirmarCompra(): boolean {
+    if (!this.metodoPagoSeleccionado) return false;
+    
+    if (this.metodoPagoSeleccionado === 'efectivo') {
+      return this.dineroRecibido >= this.calcularTotalCarrito();
+    }
+    
+    if (this.metodoPagoSeleccionado === 'tarjeta') {
+      return this.datosTarjeta.numero.length >= 13 && 
+             this.datosTarjeta.titular.length >= 3 && 
+             this.datosTarjeta.vencimiento.length === 5 && 
+             this.datosTarjeta.cvv.length >= 3;
+    }
+    
+    return false;
+  }
+
+  // MÉTODO CONFIRMAR COMPRA MEJORADO
+  async confirmarCompra() {
+    if (!this.puedeConfirmarCompra() || !this.metodoPagoSeleccionado) {
+      if (this.metodoPagoSeleccionado === 'efectivo') {
+        this.mostrarToast('El dinero recibido es insuficiente', 'warning');
+      } else if (this.metodoPagoSeleccionado === 'tarjeta') {
+        this.mostrarToast('Por favor completa todos los datos de la tarjeta', 'warning');
+      } else {
+        this.mostrarToast('Por favor selecciona un método de pago', 'warning');
+      }
+      return;
+    }
+
+    const resultado = this.carritoService.procesarCompra(this.metodoPagoSeleccionado);
+    
+    if (!resultado.exito) {
+      this.mostrarToast(resultado.mensaje, 'danger');
+      return;
+    }
+
+    // Reducir el stock de los productos
+    this.carrito.forEach(item => {
+      const producto = this.productos.find(p => p.id === item.id);
+      if (producto) {
+        producto.stock -= item.cantidad;
+      }
+    });
+    
+    this.guardarEnLocalStorage();
+    this.buscarProductos();
+    
+    // Guardar la compra para el panel de administración con información adicional
+    this.guardarCompraRealizadaMejorada(resultado.resumen!);
+    
+    // Vaciar carrito
+    this.carritoService.vaciarCarrito();
+    
+    // Cerrar interfaces
+    this.cerrarPago();
+    this.mostrarCarrito = false;
+    
+    // Resetear datos de pago
+    this.resetearDatosPago();
+    
+    // Mostrar mensaje de éxito personalizado
+    this.mostrarMensajeExitoCompra(resultado.resumen!);
+  }
+
+  // MÉTODO PARA MOSTRAR MENSAJE DE ÉXITO PERSONALIZADO
+  private mostrarMensajeExitoCompra(resumen: any) {
+    let mensaje = `¡Compra exitosa! ✅`;
+    
+    if (this.metodoPagoSeleccionado === 'efectivo') {
+      const cambio = this.dineroRecibido - resumen.total;
+      if (cambio > 0) {
+        mensaje += ` Cambio a devolver: $${cambio.toFixed(2)}`;
+      }
+    } else if (this.metodoPagoSeleccionado === 'tarjeta') {
+      const tipoTarjeta = this.detectarTipoTarjeta();
+      const ultimosDigitos = this.datosTarjeta.numero.replace(/\s/g, '').slice(-4);
+      mensaje += ` Pagado con tarjeta ${tipoTarjeta} terminada en ${ultimosDigitos}`;
+    }
+    
+    if (resumen.aplicaDescuento) {
+      mensaje += ` | Descuento aplicado: $${resumen.descuento.toFixed(2)} (${this.porcentajeDescuento}%)`;
+    }
+    
+    mensaje += ` | Total: $${resumen.total.toFixed(2)}`;
+    
+    this.mostrarToast(mensaje, 'success');
+  }
+
+  // MÉTODO MEJORADO PARA GUARDAR COMPRA
+  private guardarCompraRealizadaMejorada(resumen: any) {
+    let nombreCliente = this.usuarioActual.nombre || 'Usuario Invitado';
+    let usuarioId = this.usuarioActual.id || 'guest-user';
+
+    // Información adicional según método de pago
+    let infoPago: any = {
+      metodo: resumen.metodoPago
+    };
+
+    if (resumen.metodoPago === 'efectivo') {
+      infoPago.dineroRecibido = this.dineroRecibido;
+      infoPago.cambio = this.dineroRecibido - resumen.total;
+    } else if (resumen.metodoPago === 'tarjeta') {
+      infoPago.tipoTarjeta = this.detectarTipoTarjeta();
+      infoPago.ultimosDigitos = this.datosTarjeta.numero.replace(/\s/g, '').slice(-4);
+      infoPago.titular = this.datosTarjeta.titular;
+      infoPago.email = this.datosTarjeta.email;
+    }
+
+    const compraRealizada = {
+      id: Date.now(),
+      cliente: nombreCliente,
+      usuarioId: usuarioId,
+      productos: this.carrito.map(item => ({
+        id: item.id,
+        nombre: item.nombre,
+        precio: item.precio,
+        cantidad: item.cantidad,
+        subtotalProducto: item.total
+      })),
+      subtotal: resumen.subtotal,
+      descuento: resumen.descuento,
+      total: resumen.total,
+      metodoPago: resumen.metodoPago,
+      infoPago: infoPago,
+      fecha: new Date().toISOString(),
+      fechaFormateada: new Date().toLocaleString('es-MX'),
+      estado: 'Completada',
+      aplicaDescuento: resumen.aplicaDescuento,
+      porcentajeDescuento: this.porcentajeDescuento
+    };
+
+    // Guardar en localStorage
+    const comprasExistentes = localStorage.getItem('compras_realizadas');
+    let compras = [];
+    
+    if (comprasExistentes) {
+      try {
+        compras = JSON.parse(comprasExistentes);
+      } catch (error) {
+        console.error('Error al parsear compras existentes:', error);
+        compras = [];
+      }
+    }
+    
+    compras.push(compraRealizada);
+    localStorage.setItem('compras_realizadas', JSON.stringify(compras));
+    
+    console.log('Compra guardada con información completa:', compraRealizada);
+  }
+
+  // MÉTODO PARA RESETEAR DATOS DE PAGO
+  private resetearDatosPago() {
+    this.dineroRecibido = 0;
+    this.datosTarjeta = {
+      numero: '',
+      titular: '',
+      vencimiento: '',
+      cvv: '',
+      email: ''
+    };
+    this.metodoPagoSeleccionado = null;
+  }
+
+  // MÉTODO MEJORADO PARA CERRAR PAGO
+  cerrarPago() {
+    this.mostrarPago = false;
+    this.resetearDatosPago();
+  }
+
+  // MÉTODOS PARA USAR EL SERVICIO DE CARRITO
+  calcularSubtotal(): number {
+    return this.carritoService.calcularSubtotal();
+  }
+
+  calcularDescuento(): number {
+    return this.carritoService.calcularDescuento();
+  }
+
+  calcularTotalCarrito(): number {
+    return this.carritoService.calcularTotal();
+  }
+
+  aplicaDescuento(): boolean {
+    return this.carritoService.aplicaDescuento();
+  }
+
+  obtenerCantidadTotal(): number {
+    return this.carritoService.obtenerCantidadTotal();
+  }
+
+  // MÉTODOS PARA GESTIÓN DEL CARRITO
   aumentarCantidad(productoId: number) {
     if (this.esAdmin) {
       this.mostrarToast('Los administradores no pueden modificar el carrito', 'warning');
@@ -599,7 +722,121 @@ export class ProductosPage implements OnInit, OnDestroy {
     }
   }
 
-  // MÉTODO ACTUALIZADO (reemplaza procederCompra)
+  // MÉTODOS PARA GESTIÓN DE PRODUCTOS (ADMIN)
+  crearProductoVacio(): Producto {
+    return {
+      id: 0,
+      nombre: '',
+      descripcion: '',
+      precio: 0,
+      stock: 0,
+      categoria: '',
+      fecha: '',
+      proveedor: '',
+      image: '',
+      cantidadTemporal: 1
+    };
+  }
+
+  cambiarVista(vista: 'grid' | 'lista') {
+    this.vistaActual = vista;
+  }
+
+  guardarProducto() {
+    if (!this.esAdmin) {
+      this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
+      return;
+    }
+
+    const p = this.nuevoProducto;
+
+    if (
+      p.nombre &&
+      p.descripcion &&
+      p.precio > 0 &&
+      p.stock >= 0 &&
+      p.categoria &&
+      p.fecha &&
+      p.proveedor
+    ) {
+      if (p.id === 0) {
+        p.id = this.productos.length > 0 ? Math.max(...this.productos.map(x => x.id)) + 1 : 1;
+        p.cantidadTemporal = 1;
+        this.productos.push({ ...p });
+        this.mostrarToast('Producto agregado exitosamente', 'success');
+      } else {
+        const index = this.productos.findIndex(prod => prod.id === p.id);
+        if (index > -1) {
+          this.productos[index] = { ...p };
+          this.mostrarToast('Producto actualizado exitosamente', 'success');
+        }
+      }
+
+      this.guardarEnLocalStorage();
+      this.buscarProductos();
+      this.mostrarFormulario = false;
+      this.resetearFormulario();
+    } else {
+      this.mostrarToast('Por favor completa todos los campos incluyendo el proveedor', 'warning');
+    }
+  }
+
+  editarProducto(index: number) {
+    if (!this.esAdmin) {
+      this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
+      return;
+    }
+
+    // Validar que el índice sea válido y el producto exista
+    if (!this.productosFiltrados || index < 0 || index >= this.productosFiltrados.length) {
+      this.mostrarToast('Error: Producto no encontrado', 'danger');
+      return;
+    }
+
+    const producto = this.productosFiltrados[index];
+    if (!producto) {
+      this.mostrarToast('Error: Producto no encontrado', 'danger');
+      return;
+    }
+
+    this.nuevoProducto = { ...producto };
+    this.mostrarFormulario = true;
+  }
+
+  eliminarProducto(index: number) {
+    if (!this.esAdmin) {
+      this.mostrarToast('No tienes permisos para realizar esta acción', 'danger');
+      return;
+    }
+
+    // Validar que el índice sea válido y el producto exista
+    if (!this.productosFiltrados || index < 0 || index >= this.productosFiltrados.length) {
+      this.mostrarToast('Error: Producto no encontrado', 'danger');
+      return;
+    }
+
+    const producto = this.productosFiltrados[index];
+    if (!producto) {
+      this.mostrarToast('Error: Producto no encontrado', 'danger');
+      return;
+    }
+
+    const confirmado = confirm(`¿Eliminar el producto "${producto.nombre}"?`);
+    
+    if (confirmado) {
+      const indiceOriginal = this.productos.findIndex(p => p.id === producto.id);
+      if (indiceOriginal > -1) {
+        this.productos.splice(indiceOriginal, 1);
+        this.guardarEnLocalStorage();
+        this.buscarProductos();
+        this.resetearFormulario();
+        this.mostrarFormulario = false;
+        this.mostrarToast('Producto eliminado exitosamente', 'success');
+      }
+    }
+  }
+
+  // MÉTODOS DE NAVEGACIÓN Y UTILIDADES
   procederCompra() {
     if (this.esAdmin) {
       this.mostrarToast('Los administradores no pueden realizar compras', 'warning');
@@ -632,5 +869,10 @@ export class ProductosPage implements OnInit, OnDestroy {
       position: 'top'
     });
     toast.present();
+  }
+
+  // Método para tracking de productos en *ngFor
+  trackByProducto(index: number, producto: Producto): number {
+    return producto ? producto.id : index;
   }
 }

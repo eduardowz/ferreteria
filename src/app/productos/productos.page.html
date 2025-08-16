@@ -25,154 +25,119 @@
 </ion-header>
 
 <ion-content class="product-content">
-  <!-- NUEVA SECCIÓN: BUSCADOR DE PRODUCTOS -->
-  <ion-card class="search-card">
-    <ion-card-header>
-      <ion-card-title class="search-title">
-        <span class="emoji-icon">🔍</span>
-        Buscar Productos
-      </ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      <div class="search-container">
-        <ion-item class="search-item">
-          <ion-input 
-            placeholder="Buscar por nombre, descripción, categoría o proveedor..." 
-            [(ngModel)]="terminoBusqueda" 
+  <!-- SECCIÓN DE BÚSQUEDA MEJORADA -->
+  <div class="search-section">
+    <ion-card class="search-card">
+      <ion-card-content>
+        <div class="search-container">
+          <ion-searchbar
+            [(ngModel)]="terminoBusqueda"
             (ionInput)="buscarProductos()"
-            clearInput="true">
-          </ion-input>
-          <ion-button slot="end" fill="clear" (click)="limpiarBusqueda()" *ngIf="terminoBusqueda">
-            <ion-icon name="close-outline"></ion-icon>
-          </ion-button>
-        </ion-item>
-      </div>
-      <div class="search-results" *ngIf="terminoBusqueda">
-        <span class="search-count">
-          <span class="emoji-icon">📊</span>
-          {{ productosFiltrados.length }} producto(s) encontrado(s)
-        </span>
-      </div>
-    </ion-card-content>
-  </ion-card>
-
-  <!-- SECCIÓN DEL CARRITO MEJORADA CON SISTEMA DE DESCUENTOS -->
-  <ion-card *ngIf="!esAdmin && mostrarCarrito" class="cart-card">
-    <ion-card-header class="cart-header">
-      <ion-card-title class="cart-title">
-        <span class="emoji-icon">🛒</span>
-        Mi Carrito de Compras
-      </ion-card-title>
-      <div class="cart-count">
-        <span class="emoji-icon">📊</span>
-        {{ carrito.length }} producto(s) - {{ obtenerCantidadTotal() }} unidades
-      </div>
-    </ion-card-header>
-    <ion-card-content>
-      <div *ngIf="carrito.length === 0" class="empty-cart">
-        <span class="emoji-icon">🛒</span>
-        Tu carrito está vacío
-      </div>
-      
-      <ion-list *ngIf="carrito.length > 0" class="cart-list">
-        <ion-item *ngFor="let item of carrito; let i = index" class="cart-item">
-          <div class="cart-product-avatar">
-            <span class="avatar-emoji">🥤</span>
+            placeholder="Buscar productos..."
+            show-clear-button="focus"
+            class="custom-searchbar">
+          </ion-searchbar>
+          <div class="search-results" *ngIf="terminoBusqueda">
+            <span class="search-count">
+              <ion-icon name="analytics-outline"></ion-icon>
+              {{ productosFiltrados.length }} producto(s) encontrado(s)
+            </span>
           </div>
-          <div class="cart-product-info">
-            <div class="cart-product-name">{{ item.nombre }}</div>
-            <div class="cart-product-details">
-              <div class="cart-detail">
-                <span class="detail-emoji">💰</span>
-                Precio: ${{ item.precio }}
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- CARRITO MEJORADO CON MEJOR DISEÑO -->
+  <div class="cart-section" *ngIf="!esAdmin && mostrarCarrito">
+    <ion-card class="cart-card-modern">
+      <ion-card-header class="cart-header-modern">
+        <div class="cart-title-section">
+          <h2>🛒 Mi Carrito</h2>
+          <span class="cart-items-count">{{ carrito.length }} productos</span>
+        </div>
+        <ion-button fill="clear" color="medium" (click)="mostrarCarrito = false">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </ion-card-header>
+      
+      <ion-card-content>
+        <div *ngIf="carrito.length === 0" class="empty-cart-modern">
+          <ion-icon name="cart-outline" class="empty-cart-icon"></ion-icon>
+          <p>Tu carrito está vacío</p>
+        </div>
+        
+        <div *ngIf="carrito.length > 0">
+          <div class="cart-items-modern">
+            <div *ngFor="let item of carrito" class="cart-item-modern">
+              <div class="item-image">🥤</div>
+              <div class="item-details">
+                <h4>{{ item.nombre }}</h4>
+                <p class="item-price">${{ item.precio }}</p>
+                <div class="quantity-controls">
+                  <ion-button fill="clear" size="small" (click)="disminuirCantidad(item.id)">
+                    <ion-icon name="remove-outline"></ion-icon>
+                  </ion-button>
+                  <span class="quantity">{{ item.cantidad }}</span>
+                  <ion-button fill="clear" size="small" (click)="aumentarCantidad(item.id)">
+                    <ion-icon name="add-outline"></ion-icon>
+                  </ion-button>
+                </div>
               </div>
-              <div class="cart-detail">
-                <span class="detail-emoji">📦</span>
-                Cantidad: {{ item.cantidad }}
-              </div>
-              <div class="cart-detail">
-                <span class="detail-emoji">💵</span>
-                Subtotal: ${{ item.total.toFixed(2) }}
+              <div class="item-total">
+                <span>${{ item.total.toFixed(2) }}</span>
+                <ion-button fill="clear" color="danger" size="small" (click)="eliminarDelCarrito(item.id)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
               </div>
             </div>
           </div>
-          <div class="cart-actions" slot="end">
-            <ion-button fill="clear" color="success" (click)="aumentarCantidad(item.id)">
-              <ion-icon name="add-outline"></ion-icon>
-            </ion-button>
-            <ion-button fill="clear" color="warning" (click)="disminuirCantidad(item.id)">
-              <ion-icon name="remove-outline"></ion-icon>
-            </ion-button>
-            <ion-button fill="clear" color="danger" (click)="eliminarDelCarrito(item.id)">
-              <ion-icon name="trash-outline"></ion-icon>
-            </ion-button>
-          </div>
-        </ion-item>
-      </ion-list>
-      
-      <!-- NUEVA SECCIÓN: RESUMEN CON DESCUENTOS -->
-      <div *ngIf="carrito.length > 0" class="cart-summary">
-        <div class="summary-line">
-          <span>
-            <span class="emoji-icon">📝</span>
-            Subtotal:
-          </span>
-          <span class="summary-amount">${{ calcularSubtotal().toFixed(2) }}</span>
-        </div>
-        
-        <!-- Información de descuento -->
-        <div class="discount-info" *ngIf="aplicaDescuento()">
-          <div class="summary-line discount-line">
-            <span>
-              <span class="emoji-icon">🎉</span>
-              Descuento ({{ porcentajeDescuento }}%):
-            </span>
-            <span class="discount-amount">-${{ calcularDescuento().toFixed(2) }}</span>
-          </div>
-          <div class="discount-message">
-            <span class="emoji-icon">✨</span>
-            ¡Felicidades! Tu compra califica para descuento
+          
+          <!-- RESUMEN MEJORADO -->
+          <div class="cart-summary-modern">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>${{ calcularSubtotal().toFixed(2) }}</span>
+            </div>
+            
+            <div class="summary-row discount-row" *ngIf="aplicaDescuento()">
+              <span>🎉 Descuento ({{ porcentajeDescuento }}%):</span>
+              <span class="discount-amount">-${{ calcularDescuento().toFixed(2) }}</span>
+            </div>
+            
+            <div class="discount-message" *ngIf="!aplicaDescuento()">
+              💡 Compra ${{ (montoMinimoDescuento - calcularSubtotal()).toFixed(2) }} más y obtén {{ porcentajeDescuento }}% de descuento
+            </div>
+            
+            <div class="summary-row total-row">
+              <span><strong>Total:</strong></span>
+              <span><strong>${{ calcularTotalCarrito().toFixed(2) }}</strong></span>
+            </div>
+            
+            <div class="cart-actions-modern">
+              <ion-button expand="block" color="success" (click)="mostrarOpcionesPago()">
+                <ion-icon name="card-outline" slot="start"></ion-icon>
+                Proceder al Pago
+              </ion-button>
+              <ion-button expand="block" fill="outline" color="danger" (click)="vaciarCarrito()">
+                <ion-icon name="trash-outline" slot="start"></ion-icon>
+                Vaciar Carrito
+              </ion-button>
+            </div>
           </div>
         </div>
-        
-        <div class="discount-info" *ngIf="!aplicaDescuento()">
-          <div class="discount-message-warning">
-            <span class="emoji-icon">💡</span>
-            Compra ${{ (montoMinimoDescuento - calcularSubtotal()).toFixed(2) }} más y obtén {{ porcentajeDescuento }}% de descuento
-          </div>
-        </div>
-        
-        <div class="summary-line total-line">
-          <span class="total-label">
-            <span class="emoji-icon">💰</span>
-            Total a Pagar:
-          </span>
-          <span class="total-amount">${{ calcularTotalCarrito().toFixed(2) }}</span>
-        </div>
-        
-        <ion-button expand="block" color="success" class="checkout-button" (click)="mostrarOpcionesPago()">
-          <span class="action-emoji">💳</span>
-          Proceder al Pago
-        </ion-button>
-        <ion-button expand="block" fill="outline" color="danger" class="clear-cart-button" (click)="vaciarCarrito()">
-          <span class="action-emoji">🗑️</span>
-          Vaciar Carrito
-        </ion-button>
-      </div>
-    </ion-card-content>
-  </ion-card>
+      </ion-card-content>
+    </ion-card>
+  </div>
 
-  <!-- NUEVA SECCIÓN: MODAL DE PAGO -->
-  <ion-modal [isOpen]="mostrarPago" (didDismiss)="cerrarPago()">
+  <!-- MODAL DE PAGO MEJORADO CON FORMULARIOS COMPLETOS -->
+  <ion-modal [isOpen]="mostrarPago" (didDismiss)="cerrarPago()" class="payment-modal">
     <ng-template>
       <ion-header>
-        <ion-toolbar>
-          <ion-title>
-            <span class="emoji-icon">💳</span>
-            Finalizar Compra
-          </ion-title>
+        <ion-toolbar color="primary">
+          <ion-title>💳 Finalizar Compra</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cerrarPago()">
+            <ion-button (click)="cerrarPago()" fill="clear">
               <ion-icon name="close"></ion-icon>
             </ion-button>
           </ion-buttons>
@@ -181,81 +146,179 @@
       
       <ion-content class="payment-content">
         <!-- Resumen de compra -->
-        <ion-card class="payment-summary">
+        <ion-card class="payment-summary-card">
           <ion-card-header>
-            <ion-card-title>
-              <span class="emoji-icon">📋</span>
-              Resumen de Compra
-            </ion-card-title>
+            <ion-card-title>📋 Resumen de Compra</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <div class="payment-line">
-              <span>Subtotal:</span>
-              <span>${{ calcularSubtotal().toFixed(2) }}</span>
-            </div>
-            <div class="payment-line" *ngIf="aplicaDescuento()">
-              <span>Descuento ({{ porcentajeDescuento }}%):</span>
-              <span class="discount-amount">-${{ calcularDescuento().toFixed(2) }}</span>
-            </div>
-            <div class="payment-line total-payment">
-              <span><strong>Total a Pagar:</strong></span>
-              <span><strong>${{ calcularTotalCarrito().toFixed(2) }}</strong></span>
-            </div>
-            <div *ngIf="aplicaDescuento()" class="savings-message">
-              <span class="emoji-icon">🎉</span>
-              ¡Ahorras ${{ calcularDescuento().toFixed(2) }}!
+            <div class="payment-summary-details">
+              <div class="summary-line">
+                <span>Subtotal:</span>
+                <span>${{ calcularSubtotal().toFixed(2) }}</span>
+              </div>
+              <div class="summary-line" *ngIf="aplicaDescuento()">
+                <span>Descuento:</span>
+                <span class="discount">-${{ calcularDescuento().toFixed(2) }}</span>
+              </div>
+              <div class="summary-line total-line">
+                <span><strong>Total a Pagar:</strong></span>
+                <span><strong>${{ calcularTotalCarrito().toFixed(2) }}</strong></span>
+              </div>
             </div>
           </ion-card-content>
         </ion-card>
 
         <!-- Métodos de pago -->
-        <ion-card class="payment-methods">
+        <ion-card class="payment-methods-card">
           <ion-card-header>
-            <ion-card-title>
-              <span class="emoji-icon">💳</span>
-              Selecciona Método de Pago
-            </ion-card-title>
+            <ion-card-title>💳 Método de Pago</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <ion-list>
-              <ion-item button (click)="seleccionarMetodoPago('efectivo')" [class.selected]="metodoPagoSeleccionado === 'efectivo'">
-                <div class="payment-option">
-                  <span class="payment-emoji">💵</span>
-                  <div>
-                    <div class="payment-title">Efectivo</div>
-                    <div class="payment-description">Pago en efectivo al recibir</div>
+            <ion-segment [(ngModel)]="metodoPagoSeleccionado" class="payment-segment">
+              <ion-segment-button value="efectivo">
+                <ion-label>💵 Efectivo</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="tarjeta">
+                <ion-label>💳 Tarjeta</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+
+            <!-- FORMULARIO PARA PAGO EN EFECTIVO -->
+            <div *ngIf="metodoPagoSeleccionado === 'efectivo'" class="payment-form">
+              <ion-card class="cash-form">
+                <ion-card-header>
+                  <ion-card-subtitle>Pago en Efectivo</ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-item>
+                    <ion-label position="stacked">💵 Dinero Recibido</ion-label>
+                    <ion-input 
+                      type="number" 
+                      [(ngModel)]="dineroRecibido" 
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01">
+                    </ion-input>
+                  </ion-item>
+                  
+                  <div class="change-calculation" *ngIf="dineroRecibido && dineroRecibido >= calcularTotalCarrito()">
+                    <div class="change-info">
+                      <h4>💰 Información del Cambio</h4>
+                      <div class="change-details">
+                        <div class="change-row">
+                          <span>Total a Pagar:</span>
+                          <span>${{ calcularTotalCarrito().toFixed(2) }}</span>
+                        </div>
+                        <div class="change-row">
+                          <span>Dinero Recibido:</span>
+                          <span>${{ dineroRecibido.toFixed(2) }}</span>
+                        </div>
+                        <div class="change-row cambio-row">
+                          <span><strong>Cambio a Devolver:</strong></span>
+                          <span><strong>${{ (dineroRecibido - calcularTotalCarrito()).toFixed(2) }}</strong></span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <ion-icon *ngIf="metodoPagoSeleccionado === 'efectivo'" name="checkmark-circle" color="success" slot="end"></ion-icon>
-              </ion-item>
-              
-              <ion-item button (click)="seleccionarMetodoPago('tarjeta')" [class.selected]="metodoPagoSeleccionado === 'tarjeta'">
-                <div class="payment-option">
-                  <span class="payment-emoji">💳</span>
-                  <div>
-                    <div class="payment-title">Tarjeta</div>
-                    <div class="payment-description">Tarjeta de débito o crédito</div>
+                  
+                  <ion-note *ngIf="dineroRecibido && dineroRecibido < calcularTotalCarrito()" color="danger">
+                    ⚠️ El dinero recibido es insuficiente. Faltan ${{ (calcularTotalCarrito() - dineroRecibido).toFixed(2) }}
+                  </ion-note>
+                </ion-card-content>
+              </ion-card>
+            </div>
+
+            <!-- FORMULARIO PARA PAGO CON TARJETA -->
+            <div *ngIf="metodoPagoSeleccionado === 'tarjeta'" class="payment-form">
+              <ion-card class="card-form">
+                <ion-card-header>
+                  <ion-card-subtitle>Información de la Tarjeta</ion-card-subtitle>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-item>
+                    <ion-label position="stacked">💳 Número de Tarjeta</ion-label>
+                    <ion-input 
+                      [(ngModel)]="datosTarjeta.numero" 
+                      placeholder="1234 5678 9012 3456"
+                      maxlength="19"
+                      (ionInput)="formatearNumeroTarjeta($event)">
+                    </ion-input>
+                  </ion-item>
+                  
+                  <ion-item>
+                    <ion-label position="stacked">👤 Nombre del Titular</ion-label>
+                    <ion-input 
+                      [(ngModel)]="datosTarjeta.titular" 
+                      placeholder="Juan Pérez"
+                      style="text-transform: uppercase;">
+                    </ion-input>
+                  </ion-item>
+                  
+                  <ion-row>
+                    <ion-col size="6">
+                      <ion-item>
+                        <ion-label position="stacked">📅 Vencimiento</ion-label>
+                        <ion-input 
+                          [(ngModel)]="datosTarjeta.vencimiento" 
+                          placeholder="MM/AA"
+                          maxlength="5"
+                          (ionInput)="formatearVencimiento($event)">
+                        </ion-input>
+                      </ion-item>
+                    </ion-col>
+                    <ion-col size="6">
+                      <ion-item>
+                        <ion-label position="stacked">🔒 CVV</ion-label>
+                        <ion-input 
+                          [(ngModel)]="datosTarjeta.cvv" 
+                          placeholder="123"
+                          maxlength="4"
+                          type="password">
+                        </ion-input>
+                      </ion-item>
+                    </ion-col>
+                  </ion-row>
+                  
+                  <ion-item>
+                    <ion-label position="stacked">📧 Email (Opcional)</ion-label>
+                    <ion-input 
+                      [(ngModel)]="datosTarjeta.email" 
+                      type="email"
+                      placeholder="correo@ejemplo.com">
+                    </ion-input>
+                  </ion-item>
+
+                  <!-- Tipo de Tarjeta Visual -->
+                  <div class="card-type-display" *ngIf="datosTarjeta.numero">
+                    <h4>Tipo de Tarjeta Detectada:</h4>
+                    <div class="card-brand">
+                      <span [ngSwitch]="detectarTipoTarjeta()">
+                        <span *ngSwitchCase="'Visa'">💳 Visa</span>
+                        <span *ngSwitchCase="'Mastercard'">💳 Mastercard</span>
+                        <span *ngSwitchCase="'American Express'">💳 American Express</span>
+                        <span *ngSwitchDefault>💳 Tarjeta</span>
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <ion-icon *ngIf="metodoPagoSeleccionado === 'tarjeta'" name="checkmark-circle" color="success" slot="end"></ion-icon>
-              </ion-item>
-            </ion-list>
+                </ion-card-content>
+              </ion-card>
+            </div>
           </ion-card-content>
         </ion-card>
 
-        <!-- Botón de confirmación -->
+        <!-- Botones de confirmación -->
         <div class="payment-actions">
           <ion-button 
             expand="block" 
             color="success" 
             (click)="confirmarCompra()" 
-            [disabled]="!metodoPagoSeleccionado"
-            class="confirm-button">
-            <span class="action-emoji">✅</span>
+            [disabled]="!puedeConfirmarCompra()"
+            class="confirm-payment-btn">
+            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
             Confirmar Compra - ${{ calcularTotalCarrito().toFixed(2) }}
           </ion-button>
           <ion-button expand="block" fill="outline" color="medium" (click)="cerrarPago()">
-            <span class="action-emoji">↩️</span>
+            <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
             Cancelar
           </ion-button>
         </div>
@@ -267,225 +330,190 @@
   <ion-button *ngIf="esAdmin" 
               expand="block" 
               class="toggle-form-button" 
-              color="danger" 
+              color="primary" 
               (click)="mostrarFormulario = !mostrarFormulario; resetearFormulario()">
-    <span class="emoji-icon">{{ mostrarFormulario ? '❌' : '➕' }}</span>
+    <ion-icon [name]="mostrarFormulario ? 'close-outline' : 'add-outline'" slot="start"></ion-icon>
     {{ mostrarFormulario ? 'Cancelar' : 'Agregar Producto' }}
   </ion-button>
 
   <!-- Formulario para agregar/editar producto (solo admin) -->
-  <ion-card *ngIf="mostrarFormulario && esAdmin" class="form-card">
-    <ion-card-header class="form-header">
-      <ion-card-title class="form-title">
-        <span class="emoji-icon">{{ nuevoProducto.id === 0 ? '➕' : '✏️' }}</span>
+  <ion-card *ngIf="mostrarFormulario && esAdmin" class="form-card-modern">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon [name]="nuevoProducto.id === 0 ? 'add-circle-outline' : 'create-outline'"></ion-icon>
         {{ nuevoProducto.id === 0 ? 'Agregar Producto' : 'Editar Producto' }}
       </ion-card-title>
     </ion-card-header>
-    <ion-card-content class="form-content">
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">🏷️</span>Nombre
-        </ion-label>
-        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.nombre" placeholder="Nombre del producto"></ion-input>
-      </ion-item>
+    <ion-card-content>
+      <div class="form-grid">
+        <ion-item>
+          <ion-label position="stacked">🏷️ Nombre</ion-label>
+          <ion-input [(ngModel)]="nuevoProducto.nombre" placeholder="Nombre del producto"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">📝 Descripción</ion-label>
+          <ion-textarea [(ngModel)]="nuevoProducto.descripcion" placeholder="Descripción del producto"></ion-textarea>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">💰 Precio ($)</ion-label>
+          <ion-input type="number" [(ngModel)]="nuevoProducto.precio" placeholder="0.00"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">📦 Stock</ion-label>
+          <ion-input type="number" [(ngModel)]="nuevoProducto.stock" placeholder="0"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">🏪 Categoría</ion-label>
+          <ion-input [(ngModel)]="nuevoProducto.categoria" placeholder="Categoría"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">📅 Fecha</ion-label>
+          <ion-input type="date" [(ngModel)]="nuevoProducto.fecha"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">🏭 Proveedor</ion-label>
+          <ion-input [(ngModel)]="nuevoProducto.proveedor" placeholder="Nombre del proveedor"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">🖼️ URL de Imagen</ion-label>
+          <ion-input [(ngModel)]="nuevoProducto.image" placeholder="assets/images/producto.jpg"></ion-input>
+        </ion-item>
+      </div>
       
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">📝</span>Descripción
-        </ion-label>
-        <ion-textarea class="custom-input" [(ngModel)]="nuevoProducto.descripcion" placeholder="Descripción del producto"></ion-textarea>
-      </ion-item>
-      
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">💰</span>Precio ($)
-        </ion-label>
-        <ion-input class="custom-input" type="number" [(ngModel)]="nuevoProducto.precio" placeholder="0.00"></ion-input>
-      </ion-item>
-      
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">📦</span>Stock
-        </ion-label>
-        <ion-input class="custom-input" type="number" [(ngModel)]="nuevoProducto.stock" placeholder="0"></ion-input>
-      </ion-item>
-      
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">🏪</span>Categoría
-        </ion-label>
-        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.categoria" placeholder="Categoría"></ion-input>
-      </ion-item>
-      
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">📅</span>Fecha
-        </ion-label>
-        <ion-input class="custom-input" type="date" [(ngModel)]="nuevoProducto.fecha"></ion-input>
-      </ion-item>
-      
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">🏭</span>Proveedor
-        </ion-label>
-        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.proveedor" placeholder="Nombre del proveedor"></ion-input>
-      </ion-item>
-      
-      <ion-item class="form-item">
-        <ion-label class="input-label" position="stacked">
-          <span class="input-emoji">🖼️</span>URL de Imagen
-        </ion-label>
-        <ion-input class="custom-input" [(ngModel)]="nuevoProducto.image" placeholder="assets/images/producto.jpg"></ion-input>
-      </ion-item>
-      
-      <ion-button expand="block" 
-                  class="submit-button" 
-                  color="danger" 
-                  (click)="guardarProducto()">
-        <span class="action-emoji">{{ nuevoProducto.id === 0 ? '➕' : '✅' }}</span>
+      <ion-button expand="block" color="success" (click)="guardarProducto()" class="save-btn">
+        <ion-icon [name]="nuevoProducto.id === 0 ? 'add-outline' : 'checkmark-outline'" slot="start"></ion-icon>
         {{ nuevoProducto.id === 0 ? 'Agregar' : 'Actualizar' }}
       </ion-button>
     </ion-card-content>
   </ion-card>
 
-  <!-- Vista Grid (estilo catálogo visual) - ACTUALIZADA PARA USAR PRODUCTOS FILTRADOS -->
-  <div *ngIf="vistaActual === 'grid'">
-    <ion-grid>
-      <ion-row>
-        <ion-col size="12" size-md="6" size-lg="4" *ngFor="let producto of productosFiltrados; let i = index">
-          <ion-card class="product-card">
-            <ion-img [src]="producto.image || 'assets/images/placeholder.jpg'" [alt]="producto.nombre"></ion-img>
-            <ion-card-header>
-              <ion-card-title>{{ producto.nombre }}</ion-card-title>
-              <ion-card-subtitle *ngIf="producto.stock === 0" class="out-of-stock">
-                <span class="emoji-icon">❌</span>
-                Sin Stock
-              </ion-card-subtitle>
-              <ion-card-subtitle *ngIf="producto.stock > 0 && producto.stock <= 10" class="low-stock">
-                <span class="emoji-icon">⚠️</span>
-                Últimas {{ producto.stock }} unidades
-              </ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <p class="product-description">{{ producto.descripcion }}</p>
-              <p class="product-price">
-                <span class="emoji-icon">💰</span>
-                <strong>${{ producto.precio }}</strong>
-              </p>
-              <p *ngIf="esAdmin" class="admin-info">
-                <span class="emoji-icon">📦</span>
-                Stock: {{ producto.stock }}
-              </p>
-              <p *ngIf="esAdmin" class="admin-info">
-                <span class="emoji-icon">🏪</span>
-                {{ producto.categoria }}
-              </p>
-              <p *ngIf="esAdmin" class="admin-info">
-                <span class="emoji-icon">🏭</span>
-                {{ producto.proveedor }}
-              </p>
-              
-              <!-- Botones para usuarios normales -->
-              <ion-button *ngIf="!esAdmin" 
-                         expand="block" 
-                         (click)="agregarAlCarrito(producto)" 
-                         [disabled]="producto.stock === 0"
-                         [color]="producto.stock === 0 ? 'medium' : 'primary'">
-                <ion-icon [name]="producto.stock === 0 ? 'ban-outline' : 'cart-outline'" slot="start"></ion-icon>
-                {{ producto.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito' }}
-              </ion-button>
-              
-              <!-- Botones para administradores -->
-              <div *ngIf="esAdmin" class="admin-buttons">
-                <ion-button size="small" fill="outline" color="warning" (click)="editarProducto(i)">
-                  <ion-icon name="create-outline" slot="start"></ion-icon>
-                  Editar
-                </ion-button>
-                <ion-button size="small" fill="outline" color="danger" (click)="eliminarProducto(i)">
-                  <ion-icon name="trash-outline" slot="start"></ion-icon>
-                  Eliminar
-                </ion-button>
+  <!-- PRODUCTOS CON SELECTOR DE CANTIDAD MEJORADO -->
+  <div class="products-section">
+    <!-- Vista Grid mejorada -->
+    <div *ngIf="vistaActual === 'grid'">
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12" size-md="6" size-lg="4" *ngFor="let producto of productosFiltrados; let i = index; trackBy: trackByProducto">
+            <ion-card class="product-card-modern">
+              <div class="product-image-container">
+                <ion-img [src]="producto.image || 'assets/images/placeholder.jpg'" [alt]="producto.nombre"></ion-img>
+                <div class="stock-indicator" [ngClass]="{
+                  'in-stock': producto.stock > 10,
+                  'low-stock': producto.stock > 0 && producto.stock <= 10,
+                  'out-of-stock': producto.stock === 0
+                }">
+                  <span *ngIf="producto.stock > 10">✅ En Stock</span>
+                  <span *ngIf="producto.stock > 0 && producto.stock <= 10">⚠️ Últimas {{ producto.stock }}</span>
+                  <span *ngIf="producto.stock === 0">❌ Sin Stock</span>
+                </div>
               </div>
-            </ion-card-content>
-          </ion-card>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+              
+              <ion-card-header>
+                <ion-card-title class="product-title-modern">{{ producto.nombre }}</ion-card-title>
+                <ion-card-subtitle class="product-price-modern">${{ producto.precio }}</ion-card-subtitle>
+              </ion-card-header>
+              
+              <ion-card-content>
+                <p class="product-description-modern">{{ producto.descripcion }}</p>
+                
+                <div *ngIf="esAdmin" class="admin-info-modern">
+                  <div class="info-chip">📦 Stock: {{ producto.stock }}</div>
+                  <div class="info-chip">🏪 {{ producto.categoria }}</div>
+                  <div class="info-chip">🏭 {{ producto.proveedor }}</div>
+                </div>
+                
+                <!-- SELECTOR DE CANTIDAD MEJORADO PARA USUARIOS - CORREGIDO -->
+                <div *ngIf="!esAdmin && producto.stock > 0" class="quantity-section-modern">
+                  <label class="quantity-label">Cantidad:</label>
+                  <div class="quantity-selector-modern">
+                    <ion-button fill="outline" size="small" (click)="disminuirCantidadTemporal(i)" [disabled]="(producto.cantidadTemporal ?? 1) <= 1">
+                      <ion-icon name="remove-outline"></ion-icon>
+                    </ion-button>
+                    <span class="quantity-display">{{ producto.cantidadTemporal ?? 1 }}</span>
+                    <ion-button fill="outline" size="small" (click)="aumentarCantidadTemporal(i)" [disabled]="(producto.cantidadTemporal ?? 1) >= producto.stock">
+                      <ion-icon name="add-outline"></ion-icon>
+                    </ion-button>
+                  </div>
+                  <div class="subtotal-preview">
+                    Subtotal: ${{ ((producto.cantidadTemporal ?? 1) * producto.precio).toFixed(2) }}
+                  </div>
+                </div>
+                
+                <!-- Botones para usuarios normales -->
+                <ion-button *ngIf="!esAdmin" 
+                           expand="block" 
+                           (click)="agregarAlCarritoConCantidad(producto, i)" 
+                           [disabled]="producto.stock === 0"
+                           [color]="producto.stock === 0 ? 'medium' : 'success'"
+                           class="add-to-cart-btn-modern">
+                  <ion-icon [name]="producto.stock === 0 ? 'ban-outline' : 'cart-outline'" slot="start"></ion-icon>
+                  {{ producto.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito' }}
+                </ion-button>
+                
+                <!-- Botones para administradores -->
+                <div *ngIf="esAdmin" class="admin-buttons-modern">
+                  <ion-button fill="outline" color="warning" (click)="editarProducto(i)">
+                    <ion-icon name="create-outline" slot="start"></ion-icon>
+                    Editar
+                  </ion-button>
+                  <ion-button fill="outline" color="danger" (click)="eliminarProducto(i)">
+                    <ion-icon name="trash-outline" slot="start"></ion-icon>
+                    Eliminar
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+    <!-- Vista Lista mejorada para admin -->
+    <ion-card *ngIf="vistaActual === 'lista' && esAdmin" class="product-list-modern">
+      <ion-card-header>
+        <ion-card-title>📋 Lista de Productos ({{ productosFiltrados.length }})</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="list-item-modern" *ngFor="let producto of productosFiltrados; let i = index; trackBy: trackByProducto">
+          <div class="product-avatar-modern">🥤</div>
+          <div class="product-details-modern">
+            <h3>{{ producto.nombre }} <span class="product-id">#{{ producto.id }}</span></h3>
+            <p>{{ producto.descripcion }}</p>
+            <div class="product-meta">
+              <span>💰 ${{ producto.precio }}</span>
+              <span>📦 Stock: {{ producto.stock }}</span>
+              <span>🏪 {{ producto.categoria }}</span>
+              <span>🏭 {{ producto.proveedor }}</span>
+            </div>
+          </div>
+          <div class="action-buttons-modern">
+            <ion-button fill="clear" color="warning" (click)="editarProducto(i)">
+              <ion-icon name="create-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" color="danger" (click)="eliminarProducto(i)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
   </div>
 
-  <!-- Vista Lista (estilo administrativo) - ACTUALIZADA PARA USAR PRODUCTOS FILTRADOS -->
-  <ion-card *ngIf="vistaActual === 'lista' && esAdmin" class="product-list-card">
-    <ion-card-header class="list-header">
-      <ion-card-title class="list-title">
-        <span class="emoji-icon">📋</span>
-        Lista de Productos
-      </ion-card-title>
-      <div class="product-count">
-        <span class="emoji-icon">📊</span>
-        {{ productosFiltrados.length }} producto(s)
-        <span *ngIf="terminoBusqueda"> de {{ productos.length }} total</span>
-      </div>
-    </ion-card-header>
+  <!-- Mensaje cuando no hay productos -->
+  <ion-card *ngIf="productosFiltrados.length === 0" class="empty-products">
     <ion-card-content>
-      <ion-list class="product-list">
-        <ion-item *ngFor="let producto of productosFiltrados; let i = index" class="product-item">
-          <div class="product-avatar">
-            <span class="avatar-emoji">🥤</span>
-          </div>
-          <div class="product-info">
-            <div class="product-name">
-              {{ producto.nombre }}
-              <span class="product-id">#{{ producto.id }}</span>
-              <span *ngIf="producto.stock === 0" class="stock-badge out-of-stock-badge">SIN STOCK</span>
-              <span *ngIf="producto.stock > 0 && producto.stock <= 10" class="stock-badge low-stock-badge">BAJO STOCK</span>
-            </div>
-            <div class="product-description">{{ producto.descripcion }}</div>
-            <div class="product-details">
-              <div class="product-detail">
-                <span class="detail-emoji">💰</span>
-                Precio: ${{ producto.precio }}
-              </div>
-              <div class="product-detail">
-                <span class="detail-emoji">📦</span>
-                Stock: {{ producto.stock }}
-              </div>
-              <div class="product-detail">
-                <span class="detail-emoji">🏪</span>
-                Categoría: {{ producto.categoria }}
-              </div>
-              <div class="product-detail">
-                <span class="detail-emoji">🏭</span>
-                Proveedor: {{ producto.proveedor }}
-              </div>
-              <div class="product-detail">
-                <span class="detail-emoji">📅</span>
-                Fecha: {{ producto.fecha }}
-              </div>
-            </div>
-          </div>
-          <div class="action-buttons" slot="end">
-            <ion-button class="edit-button" fill="clear" color="warning" (click)="editarProducto(i)">
-              <span class="action-emoji">✏️</span>
-            </ion-button>
-            <ion-button class="delete-button" fill="clear" color="danger" (click)="eliminarProducto(i)">
-              <span class="action-emoji">🗑️</span>
-            </ion-button>
-          </div>
-        </ion-item>
-      </ion-list>
-    </ion-card-content>
-  </ion-card>
-
-  <!-- Mensaje cuando no hay productos o no se encuentran resultados -->
-  <ion-card *ngIf="productosFiltrados.length === 0" class="product-list-card">
-    <ion-card-content>
-      <div class="empty-state">
-        <span class="emoji-icon" *ngIf="!terminoBusqueda">📭</span>
-        <span class="emoji-icon" *ngIf="terminoBusqueda">🔍</span>
-        <p *ngIf="!terminoBusqueda">No hay productos disponibles</p>
-        <p *ngIf="terminoBusqueda">
-          No se encontraron productos con "{{ terminoBusqueda }}"
-        </p>
+      <div class="empty-state-modern">
+        <ion-icon name="storefront-outline" class="empty-icon"></ion-icon>
+        <h3 *ngIf="!terminoBusqueda">No hay productos disponibles</h3>
+        <h3 *ngIf="terminoBusqueda">No se encontraron productos</h3>
+        <p *ngIf="terminoBusqueda">Intenta con otros términos de búsqueda</p>
         <ion-button *ngIf="terminoBusqueda" fill="outline" (click)="limpiarBusqueda()">
           <ion-icon name="refresh-outline" slot="start"></ion-icon>
           Ver todos los productos
@@ -494,17 +522,14 @@
     </ion-card-content>
   </ion-card>
 
-  <!-- Información adicional para usuarios -->
-  <ion-card *ngIf="!esAdmin" class="info-card">
+  <!-- Información de descuentos para usuarios -->
+  <ion-card *ngIf="!esAdmin" class="discount-info-card">
     <ion-card-content>
-      <div class="discount-info-section">
-        <div class="discount-title">
-          <span class="emoji-icon">🎁</span>
-          ¡Aprovecha nuestros descuentos!
-        </div>
-        <div class="discount-details">
-          <span class="emoji-icon">💡</span>
-          Compra ${{ montoMinimoDescuento }} o más y obtén {{ porcentajeDescuento }}% de descuento automáticamente
+      <div class="discount-banner">
+        <div class="discount-icon">🎁</div>
+        <div class="discount-text">
+          <h4>¡Aprovecha nuestros descuentos!</h4>
+          <p>Compra ${{ montoMinimoDescuento }} o más y obtén {{ porcentajeDescuento }}% de descuento automáticamente</p>
         </div>
       </div>
     </ion-card-content>

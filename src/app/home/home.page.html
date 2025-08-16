@@ -32,7 +32,7 @@
         {{ isAdmin ? 'Panel de Administración' : 'Menú de Usuario' }}
       </ion-card-title>
       <ion-card-subtitle class="card-subtitle">
-        {{ isAdmin ? 'Gestión completa del sistema' : 'Consulta nuestros productos' }}
+        {{ isAdmin ? 'Gestión completa del sistema' : 'Consulta nuestros productos y servicios' }}
       </ion-card-subtitle>
       <!-- Botón para cambiar rol (solo para pruebas) -->
       <ion-button 
@@ -121,12 +121,23 @@
             </ion-button>
           </div>
 
+          <div class="menu-option">
+            <div class="option-header">
+              <span class="option-emoji supplier-emoji">🏭</span>
+              <p class="option-description">Conoce a nuestros proveedores de confianza</p>
+            </div>
+            <ion-button color="tertiary" expand="block" routerLink="/proveedores" class="option-button">
+              <span class="button-emoji">🏭</span>
+              Proveedores
+            </ion-button>
+          </div>
+
           <!-- Mensaje para usuarios no admin -->
           <div class="user-info">
             <div class="info-box">
               <span class="info-emoji">ℹ️</span>
               <p class="info-text">
-                Como usuario puedes consultar nuestro catálogo de productos. 
+                Como usuario puedes consultar nuestro catálogo de productos y conocer a nuestros proveedores. 
                 Para realizar pedidos o consultas específicas, contacta a nuestro personal.
               </p>
               <div class="contact-info">
