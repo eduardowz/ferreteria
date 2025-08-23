@@ -7,6 +7,8 @@ export interface ProductoCarrito {
   precio: number;
   cantidad: number;
   total: number;
+  imagen?: string; // URL o base64 de la imagen
+  descripcion?: string; // Descripción opcional del producto
 }
 
 export interface ResumenCompra {
@@ -58,29 +60,80 @@ export class CarritoService {
     return this.carritoSubject.value;
   }
 
-  agregarProducto(producto: { id?: number, nombre: string, precio: number, cantidad: number }) {
+  // Método auxiliar para convertir string a number de forma segura
+  private convertirANumero(valor: string | number | undefined): number {
+    if (valor === undefined || valor === null || valor === '') {
+      return Date.now(); // Generar ID único si no existe
+    }
+    
+    if (typeof valor === 'number') {
+      return valor;
+    }
+    
+    if (typeof valor === 'string') {
+      const numero = parseInt(valor, 10);
+      return isNaN(numero) ? Date.now() : numero;
+    }
+    
+    return Date.now(); // Fallback
+  }
+
+  // ✅ MÉTODO CORREGIDO - Acepta tanto string como number para el ID
+  agregarProducto(producto: { 
+    id?: string | number, 
+    nombre: string, 
+    precio: number | string, 
+    cantidad: number | string,
+    imagen?: string,
+    descripcion?: string 
+  }) {
     const carritoActual = this.obtenerCarrito();
     
-    // Generar ID si no existe (para productos de pedidos)
-    const id = producto.id || Date.now();
+    // Convertir y validar los valores
+    const precio = typeof producto.precio === 'string' ? 
+      parseFloat(producto.precio) : producto.precio;
+    
+    const cantidad = typeof producto.cantidad === 'string' ? 
+      parseInt(producto.cantidad, 10) : producto.cantidad;
+    
+    // Validar que precio y cantidad sean números válidos
+    if (isNaN(precio) || isNaN(cantidad) || precio <= 0 || cantidad <= 0) {
+      console.error('Precio o cantidad inválidos');
+      return false;
+    }
+
+    // Convertir ID a número
+    const id = this.convertirANumero(producto.id);
     
     // Verificar si el producto ya está en el carrito
     const productoExistente = carritoActual.find(item => 
-      item.id === id || item.nombre === producto.nombre 
+      item.id === id || (item.nombre === producto.nombre && item.precio === precio)
     );
     
     if (productoExistente) {
       // Si ya existe, aumentar la cantidad
-      productoExistente.cantidad += producto.cantidad;
+      productoExistente.cantidad += cantidad;
       productoExistente.total = productoExistente.cantidad * productoExistente.precio;
+      
+      // Actualizar imagen si se proporciona una nueva
+      if (producto.imagen) {
+        productoExistente.imagen = producto.imagen;
+      }
+      
+      // Actualizar descripción si se proporciona una nueva
+      if (producto.descripcion) {
+        productoExistente.descripcion = producto.descripcion;
+      }
     } else {
       // Si no existe, agregarlo al carrito
       const nuevoItem: ProductoCarrito = {
         id: id,
         nombre: producto.nombre,
-        precio: producto.precio,
-        cantidad: producto.cantidad,
-        total: producto.precio * producto.cantidad
+        precio: precio,
+        cantidad: cantidad,
+        total: precio * cantidad,
+        imagen: producto.imagen,
+        descripcion: producto.descripcion
       };
       carritoActual.push(nuevoItem);
     }
@@ -89,32 +142,72 @@ export class CarritoService {
     return true;
   }
 
-  eliminarProducto(id: number) {
+  eliminarProducto(id: number | string) {
+    const idNumerico = this.convertirANumero(id);
     const carritoActual = this.obtenerCarrito();
-    const carritoFiltrado = carritoActual.filter(item => item.id !== id);
+    const carritoFiltrado = carritoActual.filter(item => item.id !== idNumerico);
     this.guardarCarrito(carritoFiltrado);
   }
 
-  actualizarCantidad(id: number, cantidad: number) {
+  actualizarCantidad(id: number | string, cantidad: number | string) {
+    const idNumerico = this.convertirANumero(id);
+    const cantidadNumerica = typeof cantidad === 'string' ? 
+      parseInt(cantidad, 10) : cantidad;
+
+    if (isNaN(cantidadNumerica)) {
+      console.error('Cantidad inválida para actualizar');
+      return;
+    }
+
     const carritoActual = this.obtenerCarrito();
-    const producto = carritoActual.find(item => item.id === id);
+    const producto = carritoActual.find(item => item.id === idNumerico);
     
     if (producto) {
-      if (cantidad <= 0) {
-        this.eliminarProducto(id);
+      if (cantidadNumerica <= 0) {
+        this.eliminarProducto(idNumerico);
       } else {
-        producto.cantidad = cantidad;
+        producto.cantidad = cantidadNumerica;
         producto.total = producto.cantidad * producto.precio;
         this.guardarCarrito(carritoActual);
       }
     }
   }
 
+  // Método para actualizar imagen de un producto específico
+  actualizarImagen(id: number | string, imagen: string) {
+    const idNumerico = this.convertirANumero(id);
+    const carritoActual = this.obtenerCarrito();
+    const producto = carritoActual.find(item => item.id === idNumerico);
+    
+    if (producto) {
+      producto.imagen = imagen;
+      this.guardarCarrito(carritoActual);
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Método para actualizar descripción de un producto específico
+  actualizarDescripcion(id: number | string, descripcion: string) {
+    const idNumerico = this.convertirANumero(id);
+    const carritoActual = this.obtenerCarrito();
+    const producto = carritoActual.find(item => item.id === idNumerico);
+    
+    if (producto) {
+      producto.descripcion = descripcion;
+      this.guardarCarrito(carritoActual);
+      return true;
+    }
+    
+    return false;
+  }
+
   vaciarCarrito() {
     this.guardarCarrito([]);
   }
 
-  // NUEVOS MÉTODOS PARA CÁLCULOS CON DESCUENTO
+  // MÉTODOS PARA CÁLCULOS CON DESCUENTO
 
   calcularSubtotal(): number {
     return this.obtenerCarrito().reduce((total, item) => total + item.total, 0);
@@ -154,7 +247,7 @@ export class CarritoService {
     return this.obtenerCarrito().reduce((total, item) => total + item.cantidad, 0);
   }
 
-  // NUEVOS MÉTODOS PARA VALIDACIÓN DE COMPRA
+  // MÉTODOS PARA VALIDACIÓN DE COMPRA
 
   validarCompra(metodoPago: MetodoPago): { valida: boolean, mensaje: string } {
     const carrito = this.obtenerCarrito();
@@ -211,5 +304,25 @@ export class CarritoService {
       style: 'currency',
       currency: 'MXN'
     }).format(precio);
+  }
+
+  // MÉTODOS ESPECÍFICOS PARA MANEJO DE IMÁGENES
+
+  validarUrlImagen(url: string): boolean {
+    if (!url) return false;
+    
+    // Validar URLs básicas
+    const urlRegex = /^(https?:\/\/)|(data:image\/)/;
+    return urlRegex.test(url);
+  }
+
+  // Método para obtener productos con imágenes
+  obtenerProductosConImagenes(): ProductoCarrito[] {
+    return this.obtenerCarrito().filter(producto => producto.imagen);
+  }
+
+  // Método para obtener productos sin imágenes
+  obtenerProductosSinImagenes(): ProductoCarrito[] {
+    return this.obtenerCarrito().filter(producto => !producto.imagen);
   }
 }
