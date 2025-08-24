@@ -45,3 +45,8 @@ ionic cap open android
 ```
 
 ## Licencia 📄
+
+Este proyecto está bajo la Licencia MIT.
+
+### UTCJ © 2025 - TDM51
+
