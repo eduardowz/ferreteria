@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { IonicModule, ToastController, AlertController, ModalController } from '@ionic/angular';
+import { IonicModule, ToastController, AlertController, ModalController, LoadingController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpService } from '../services/http.service'; // Ajusta la ruta según tu estructura
 
 @Component({
   selector: 'app-clientes',
@@ -29,10 +30,7 @@ export class ClientesPage implements OnInit, OnDestroy {
   mostrandoFormulario = false;
   modoEdicion = false;
   elementoSeleccionado: Cliente | null = null;
-
-  // Servicios
-  private clienteService = new ClienteService();
-  private estadisticasService = new EstadisticasService();
+  isLoading = false;
 
   // Variables de estadísticas
   estadisticas = {
@@ -47,10 +45,13 @@ export class ClientesPage implements OnInit, OnDestroy {
     private toastController: ToastController,
     private alertController: AlertController,
     private modalController: ModalController,
-    public router: Router  // Cambiado de private a public
+    private loadingController: LoadingController,
+    private httpService: HttpService,
+    public router: Router
   ) {}
 
   ngOnInit() {
+    this.comprobarConexionBD();
     this.cargarDatosCompletos();
     this.calcularEstadisticas();
   }
@@ -59,7 +60,7 @@ export class ClientesPage implements OnInit, OnDestroy {
     // Cleanup si es necesario
   }
 
-  // ===== MÉTODOS DE CARGA DE DATOS =====
+  // ===== MÉTODOS DE CARGA DE DATOS - INTEGRADOS CON MONGODB =====
 
   cargarDatosCompletos(): void {
     this.cargarClientes();
@@ -69,8 +70,38 @@ export class ClientesPage implements OnInit, OnDestroy {
     this.cargarComprasRealizadas();
   }
 
-  cargarClientes(): void {
-    this.clientes = this.clienteService.obtenerClientes();
+  async cargarClientes(): Promise<void> {
+    try {
+      this.httpService.getClientes().subscribe({
+        next: (response) => {
+          console.log('Respuesta del servidor para clientes:', response);
+          
+          if (response && response.data && Array.isArray(response.data)) {
+            this.clientes = response.data.filter((c: Cliente) => c.activo !== false);
+            console.log('Clientes cargados desde MongoDB:', this.clientes);
+          } else if (Array.isArray(response)) {
+            this.clientes = response.filter((c: Cliente) => c.activo !== false);
+            console.log('Clientes cargados desde MongoDB (array directo):', this.clientes);
+          } else {
+            console.warn('Respuesta inesperada, usando localStorage');
+            this.cargarClientesDesdeLocalStorage();
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar desde MongoDB, usando localStorage:', error);
+          this.cargarClientesDesdeLocalStorage();
+        }
+      });
+    } catch (error: any) {
+      console.error('Error al conectar con la base de datos:', error);
+      this.cargarClientesDesdeLocalStorage();
+    }
+  }
+
+  private cargarClientesDesdeLocalStorage(): void {
+    const clientesLocal = localStorage.getItem('clientes');
+    this.clientes = clientesLocal ? JSON.parse(clientesLocal) : [];
+    console.log('Clientes cargados desde localStorage (fallback):', this.clientes);
   }
 
   cargarProductos(): void {
@@ -96,16 +127,27 @@ export class ClientesPage implements OnInit, OnDestroy {
   // ===== MÉTODOS PARA ESTADÍSTICAS =====
 
   calcularEstadisticas(): void {
-    this.estadisticas = this.estadisticasService.calcularEstadisticas({
-      clientes: this.clientes,
-      productos: this.productos,
-      pedidos: this.pedidos,
-      usuarios: this.usuariosRegistrados,
-      compras: this.comprasRealizadas
-    });
+    const hoy = new Date();
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    
+    // Filtrar pedidos del mes
+    const pedidosDelMes = this.comprasRealizadas.filter(compra => 
+      new Date(compra.fecha) >= inicioMes
+    );
+    
+    // Calcular ventas del mes
+    const ventasDelMes = pedidosDelMes.reduce((total, compra) => total + compra.total, 0);
+    
+    this.estadisticas = {
+      clientesActivos: this.clientes.filter(c => c.activo).length,
+      pedidosDelMes: pedidosDelMes.length,
+      ventasDelMes: ventasDelMes,
+      productosTotales: this.productos.length,
+      usuariosRegistrados: this.usuariosRegistrados.length
+    };
   }
 
-  // ===== MÉTODOS PARA CLIENTES =====
+  // ===== MÉTODOS PARA CLIENTES - INTEGRADOS CON MONGODB =====
 
   mostrarFormularioCliente(cliente?: Cliente): void {
     this.modoEdicion = !!cliente;
@@ -120,23 +162,107 @@ export class ClientesPage implements OnInit, OnDestroy {
   }
 
   async guardarCliente(): Promise<void> {
+    this.isLoading = true;
+    
     try {
       if (this.modoEdicion && this.elementoSeleccionado) {
-        this.clienteService.actualizarCliente(this.elementoSeleccionado.id, this.clienteForm);
-        await this.mostrarToast('Cliente actualizado correctamente', 'success');
-      } else {
-        const nuevoCliente = this.clienteService.crearCliente(this.clienteForm as Omit<Cliente, 'id' | 'fechaRegistro'>);
-        await this.mostrarToast('Cliente creado correctamente', 'success');
+        // Actualizar cliente existente
+        const clienteId = this.elementoSeleccionado._id || this.elementoSeleccionado.id;
         
-        // Sincronizar con usuarios registrados si existe
-        this.sincronizarClienteConUsuario(nuevoCliente);
+        // Verificar que el ID existe antes de llamar al servicio
+        if (!clienteId) {
+          await this.mostrarToast('Error: Cliente sin identificador válido', 'danger');
+          this.isLoading = false;
+          return;
+        }
+        
+        this.httpService.updateCliente(clienteId, this.clienteForm).subscribe({
+          next: async (response) => {
+            console.log('Cliente actualizado:', response);
+            await this.mostrarToast('Cliente actualizado correctamente', 'success');
+            await this.cargarClientes();
+            this.calcularEstadisticas();
+            this.ocultarFormulario();
+          },
+          error: async (error) => {
+            console.error('Error al actualizar en MongoDB:', error);
+            await this.actualizarClienteLocalStorage();
+          }
+        });
+      } else {
+        // Crear nuevo cliente
+        const nuevoCliente = {
+          ...this.clienteForm,
+          fechaRegistro: new Date(),
+          activo: true
+        };
+        
+        this.httpService.createCliente(nuevoCliente).subscribe({
+          next: async (response) => {
+            console.log('Cliente creado:', response);
+            await this.mostrarToast('Cliente creado correctamente', 'success');
+            await this.cargarClientes();
+            this.calcularEstadisticas();
+            this.ocultarFormulario();
+            
+            // Sincronizar con usuarios registrados si existe
+            if (response.data || response) {
+              this.sincronizarClienteConUsuario(response.data || response);
+            }
+          },
+          error: async (error) => {
+            console.error('Error al crear en MongoDB:', error);
+            await this.crearClienteLocalStorage(nuevoCliente);
+          }
+        });
       }
+    } catch (error: any) {
+      console.error('Error al guardar cliente:', error);
+      await this.mostrarToast('Error al guardar cliente', 'danger');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async actualizarClienteLocalStorage(): Promise<void> {
+    try {
+      if (!this.elementoSeleccionado) {
+        await this.mostrarToast('Error: No hay cliente seleccionado', 'danger');
+        return;
+      }
+
+      const index = this.clientes.findIndex(c => 
+        (c._id || c.id) === (this.elementoSeleccionado!._id || this.elementoSeleccionado!.id)
+      );
+      if (index !== -1) {
+        this.clientes[index] = { ...this.clientes[index], ...this.clienteForm };
+        localStorage.setItem('clientes', JSON.stringify(this.clientes));
+        await this.mostrarToast('Cliente actualizado (localStorage)', 'warning');
+        this.calcularEstadisticas();
+        this.ocultarFormulario();
+      }
+    } catch (error) {
+      console.error('Error al actualizar en localStorage:', error);
+      await this.mostrarToast('Error al actualizar cliente', 'danger');
+    }
+  }
+
+  private async crearClienteLocalStorage(nuevoCliente: any): Promise<void> {
+    try {
+      const clienteConId = {
+        ...nuevoCliente,
+        id: this.generarId()
+      };
       
-      this.cargarClientes();
+      this.clientes.push(clienteConId);
+      localStorage.setItem('clientes', JSON.stringify(this.clientes));
+      await this.mostrarToast('Cliente creado (localStorage)', 'warning');
       this.calcularEstadisticas();
       this.ocultarFormulario();
+      this.sincronizarClienteConUsuario(clienteConId);
     } catch (error) {
-      await this.mostrarToast('Error al guardar cliente', 'danger');
+      console.error('Error al crear en localStorage:', error);
+      await this.mostrarToast('Error al crear cliente', 'danger');
     }
   }
 
@@ -151,11 +277,37 @@ export class ClientesPage implements OnInit, OnDestroy {
         },
         {
           text: 'Eliminar',
-          handler: () => {
-            this.clienteService.eliminarCliente(cliente.id);
-            this.cargarClientes();
-            this.calcularEstadisticas();
-            this.mostrarToast('Cliente eliminado correctamente', 'success');
+          handler: async () => {
+            this.isLoading = true;
+            
+            try {
+              const clienteId = cliente._id || cliente.id;
+              
+              // Verificar que el ID existe antes de llamar al servicio
+              if (!clienteId) {
+                await this.mostrarToast('Error: Cliente sin identificador válido', 'danger');
+                this.isLoading = false;
+                return;
+              }
+              
+              this.httpService.deleteCliente(clienteId).subscribe({
+                next: async (response) => {
+                  console.log('Cliente eliminado:', response);
+                  await this.mostrarToast('Cliente eliminado correctamente', 'success');
+                  await this.cargarClientes();
+                  this.calcularEstadisticas();
+                },
+                error: async (error) => {
+                  console.error('Error al eliminar en MongoDB:', error);
+                  await this.eliminarClienteLocalStorage(cliente);
+                }
+              });
+            } catch (error: any) {
+              console.error('Error al eliminar cliente:', error);
+              await this.eliminarClienteLocalStorage(cliente);
+            } finally {
+              this.isLoading = false;
+            }
           }
         }
       ]
@@ -163,15 +315,133 @@ export class ClientesPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  buscarClientes(): void {
-    if (this.terminoBusqueda.trim()) {
-      this.clientes = this.clienteService.buscarClientes(this.terminoBusqueda);
-    } else {
-      this.cargarClientes();
+  private async eliminarClienteLocalStorage(cliente: Cliente): Promise<void> {
+    try {
+      const index = this.clientes.findIndex(c => (c._id || c.id) === (cliente._id || cliente.id));
+      if (index !== -1) {
+        this.clientes[index].activo = false;
+        localStorage.setItem('clientes', JSON.stringify(this.clientes));
+        await this.mostrarToast('Cliente eliminado (localStorage)', 'warning');
+        await this.cargarClientes();
+        this.calcularEstadisticas();
+      }
+    } catch (error) {
+      console.error('Error al eliminar en localStorage:', error);
+      await this.mostrarToast('Error al eliminar cliente', 'danger');
+    } finally {
+      this.isLoading = false;
     }
   }
 
-  // ===== MÉTODOS DE SINCRONIZACIÓN =====
+  async buscarClientes(): Promise<void> {
+    if (this.terminoBusqueda.trim()) {
+      this.isLoading = true;
+      
+      try {
+        this.httpService.buscarClientes(this.terminoBusqueda).subscribe({
+          next: (response) => {
+            console.log('Resultados de búsqueda:', response);
+            
+            if (response && response.data && Array.isArray(response.data)) {
+              this.clientes = response.data.filter((c: Cliente) => c.activo !== false);
+            } else if (Array.isArray(response)) {
+              this.clientes = response.filter((c: Cliente) => c.activo !== false);
+            } else {
+              this.buscarClientesLocal();
+            }
+          },
+          error: (error) => {
+            console.error('Error al buscar en MongoDB:', error);
+            this.buscarClientesLocal();
+          }
+        });
+      } catch (error: any) {
+        console.error('Error al buscar clientes:', error);
+        this.buscarClientesLocal();
+      } finally {
+        this.isLoading = false;
+      }
+    } else {
+      await this.cargarClientes();
+    }
+  }
+
+  private buscarClientesLocal(): void {
+    try {
+      const terminoLower = this.terminoBusqueda.toLowerCase();
+      const clientesLocal = localStorage.getItem('clientes');
+      const todosClientes = clientesLocal ? JSON.parse(clientesLocal) : [];
+      
+      this.clientes = todosClientes.filter((c: Cliente) => 
+        c.activo !== false && (
+          c.datosGenerales.nombre.toLowerCase().includes(terminoLower) ||
+          c.datosGenerales.correo.toLowerCase().includes(terminoLower) ||
+          (c.datosFiscales.rfc && c.datosFiscales.rfc.toLowerCase().includes(terminoLower))
+        )
+      );
+      console.log('Búsqueda local completada:', this.clientes);
+    } catch (error) {
+      console.error('Error en búsqueda local:', error);
+      this.clientes = [];
+    }
+  }
+
+  // ===== MÉTODOS DE MIGRACIÓN Y SINCRONIZACIÓN =====
+
+  async migrarDatosAMongoDB(): Promise<void> {
+    this.isLoading = true;
+    
+    try {
+      const clientesLocal = localStorage.getItem('clientes');
+      if (!clientesLocal) {
+        await this.mostrarToast('No hay datos locales para migrar', 'warning');
+        return;
+      }
+      
+      const clientes = JSON.parse(clientesLocal);
+      let migrados = 0;
+      let errores = 0;
+      
+      for (const cliente of clientes) {
+        try {
+          // Remover el ID local para que MongoDB genere uno nuevo
+          const clienteSinId = { ...cliente };
+          delete clienteSinId.id;
+          
+          await this.httpService.createCliente(clienteSinId).toPromise();
+          migrados++;
+        } catch (error) {
+          console.error('Error al migrar cliente:', error);
+          errores++;
+        }
+      }
+      
+      await this.mostrarToast(`Migración completada: ${migrados} exitosos, ${errores} errores`, 'success');
+      await this.cargarClientes();
+      
+    } catch (error) {
+      console.error('Error en migración:', error);
+      await this.mostrarToast('Error al migrar datos', 'danger');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async comprobarConexionBD(): Promise<void> {
+    this.httpService.comprobarConexion().subscribe({
+      next: (response) => {
+        if (response.connected) {
+          this.mostrarToast('Conexión exitosa con la base de datos', 'success');
+        } else {
+          this.mostrarToast('Base de datos no disponible - usando localStorage', 'warning');
+        }
+      },
+      error: (error) => {
+        console.error('Error de conexión:', error);
+        this.mostrarToast('Error de conexión con la base de datos', 'danger');
+      }
+    });
+  }
 
   sincronizarClienteConUsuario(cliente: Cliente): void {
     // Buscar si existe un usuario registrado con el mismo email
@@ -189,7 +459,24 @@ export class ClientesPage implements OnInit, OnDestroy {
         estatus: compra.estado
       }));
       
-      this.clienteService.actualizarCliente(cliente.id, cliente);
+      // Intentar actualizar en MongoDB, sino en localStorage
+      const clienteId = cliente._id || cliente.id;
+      
+      if (clienteId) {
+        this.httpService.updateCliente(clienteId, cliente).subscribe({
+          next: (response) => {
+            console.log('Cliente sincronizado en MongoDB:', response);
+          },
+          error: (error) => {
+            console.error('Error al sincronizar en MongoDB, usando localStorage:', error);
+            const index = this.clientes.findIndex(c => (c._id || c.id) === clienteId);
+            if (index !== -1) {
+              this.clientes[index] = cliente;
+              localStorage.setItem('clientes', JSON.stringify(this.clientes));
+            }
+          }
+        });
+      }
     }
   }
 
@@ -250,8 +537,25 @@ export class ClientesPage implements OnInit, OnDestroy {
         activo: true
       };
 
-      const clienteCreado = this.clienteService.crearCliente(nuevoCliente);
-      this.sincronizarClienteConUsuario(clienteCreado);
+      // Intentar crear en MongoDB
+      this.httpService.createCliente(nuevoCliente).subscribe({
+        next: (response) => {
+          console.log('Cliente creado automáticamente:', response);
+          this.sincronizarClienteConUsuario(response.data || response);
+        },
+        error: (error) => {
+          console.error('Error al crear cliente automáticamente en MongoDB:', error);
+          // Fallback a localStorage
+          const clienteConId = {
+            ...nuevoCliente,
+            id: this.generarId(),
+            fechaRegistro: new Date()
+          };
+          this.clientes.push(clienteConId);
+          localStorage.setItem('clientes', JSON.stringify(this.clientes));
+          this.sincronizarClienteConUsuario(clienteConId);
+        }
+      });
     }
   }
 
@@ -290,6 +594,10 @@ export class ClientesPage implements OnInit, OnDestroy {
       position: 'top'
     });
     await toast.present();
+  }
+
+  private generarId(): string {
+    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
 
   ocultarFormulario(): void {
@@ -331,7 +639,8 @@ export class ClientesPage implements OnInit, OnDestroy {
 // ===== INTERFACES =====
 
 export interface Cliente {
-  id: string;
+  id?: string;
+  _id?: string; // Para MongoDB
   datosGenerales: {
     nombre: string;
     razonSocial?: string;
@@ -375,177 +684,4 @@ export interface Factura {
   total: number;
   uuid?: string;
   estatus: 'vigente' | 'cancelada';
-}
-
-// ===== SERVICIOS =====
-
-export class ClienteService {
-  private clientes: Cliente[] = [];
-
-  constructor() {
-    this.cargarDatosDesdeLocalStorage();
-  }
-
-  private cargarDatosDesdeLocalStorage(): void {
-    const data = localStorage.getItem('clientes');
-    if (data) {
-      this.clientes = JSON.parse(data);
-    } else {
-      this.cargarDatosEjemplo();
-    }
-  }
-
-  private guardarEnLocalStorage(): void {
-    localStorage.setItem('clientes', JSON.stringify(this.clientes));
-  }
-
-  crearCliente(cliente: Omit<Cliente, 'id' | 'fechaRegistro'>): Cliente {
-    const nuevoCliente: Cliente = {
-      ...cliente,
-      id: this.generarId(),
-      fechaRegistro: new Date(),
-      activo: true
-    };
-    this.clientes.push(nuevoCliente);
-    this.guardarEnLocalStorage();
-    return nuevoCliente;
-  }
-
-  obtenerClientes(): Cliente[] {
-    return this.clientes.filter(c => c.activo);
-  }
-
-  obtenerClientePorId(id: string): Cliente | undefined {
-    return this.clientes.find(c => c.id === id);
-  }
-
-  actualizarCliente(id: string, datos: Partial<Cliente>): Cliente | null {
-    const index = this.clientes.findIndex(c => c.id === id);
-    if (index !== -1) {
-      this.clientes[index] = { ...this.clientes[index], ...datos };
-      this.guardarEnLocalStorage();
-      return this.clientes[index];
-    }
-    return null;
-  }
-
-  eliminarCliente(id: string): boolean {
-    const index = this.clientes.findIndex(c => c.id === id);
-    if (index !== -1) {
-      this.clientes[index].activo = false;
-      this.guardarEnLocalStorage();
-      return true;
-    }
-    return false;
-  }
-
-  buscarClientes(termino: string): Cliente[] {
-    const terminoLower = termino.toLowerCase();
-    return this.clientes.filter(c => 
-      c.activo && (
-        c.datosGenerales.nombre.toLowerCase().includes(terminoLower) ||
-        c.datosGenerales.correo.toLowerCase().includes(terminoLower) ||
-        c.datosFiscales.rfc.toLowerCase().includes(terminoLower)
-      )
-    );
-  }
-
-  private cargarDatosEjemplo(): void {
-    // Cargar desde usuarios registrados si existen
-    const usuariosRegistrados = JSON.parse(localStorage.getItem('registrousuario') || '[]');
-    
-    if (usuariosRegistrados.length > 0) {
-      usuariosRegistrados.forEach((usuario: any) => {
-        const clienteEjemplo: Cliente = {
-          id: this.generarId(),
-          datosGenerales: {
-            nombre: usuario.nombre || usuario.username,
-            razonSocial: '',
-            contacto: usuario.nombre || usuario.username,
-            telefono: usuario.telefono || '',
-            correo: usuario.email
-          },
-          datosFiscales: {
-            rfc: '',
-            regimenFiscal: 'Régimen Simplificado de Confianza',
-            codigoPostal: '32000'
-          },
-          historialCompras: [],
-          facturas: [],
-          condicionesComerciales: {
-            descuento: 0,
-            credito: 0,
-            limite: 10000
-          },
-          fechaRegistro: new Date(),
-          activo: true
-        };
-        this.clientes.push(clienteEjemplo);
-      });
-    } else {
-      // Cliente de ejemplo por defecto
-      const clienteEjemplo: Cliente = {
-        id: '1',
-        datosGenerales: {
-          nombre: 'Cliente Ejemplo',
-          razonSocial: 'Comercializadora JP S.A. de C.V.',
-          contacto: 'Juan Pérez',
-          telefono: '656-123-4567',
-          correo: 'cliente@ejemplo.com'
-        },
-        datosFiscales: {
-          rfc: 'PEPJ800101ABC',
-          regimenFiscal: 'Régimen General de Ley Personas Morales',
-          codigoPostal: '32000'
-        },
-        historialCompras: [],
-        facturas: [],
-        condicionesComerciales: {
-          descuento: 5,
-          credito: 30,
-          limite: 50000
-        },
-        fechaRegistro: new Date(),
-        activo: true
-      };
-      this.clientes.push(clienteEjemplo);
-    }
-    
-    this.guardarEnLocalStorage();
-  }
-
-  private generarId(): string {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  }
-}
-
-// ===== SERVICIO DE ESTADÍSTICAS =====
-
-export class EstadisticasService {
-  calcularEstadisticas(datos: {
-    clientes: Cliente[],
-    productos: any[],
-    pedidos: any[],
-    usuarios: any[],
-    compras: any[]
-  }) {
-    const hoy = new Date();
-    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    
-    // Filtrar pedidos del mes
-    const pedidosDelMes = datos.compras.filter(compra => 
-      new Date(compra.fecha) >= inicioMes
-    );
-    
-    // Calcular ventas del mes
-    const ventasDelMes = pedidosDelMes.reduce((total, compra) => total + compra.total, 0);
-    
-    return {
-      clientesActivos: datos.clientes.filter(c => c.activo).length,
-      pedidosDelMes: pedidosDelMes.length,
-      ventasDelMes: ventasDelMes,
-      productosTotales: datos.productos.length,
-      usuariosRegistrados: datos.usuarios.length
-    };
-  }
 }

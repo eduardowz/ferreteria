@@ -4,17 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ToastController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
+import { HttpService } from '../services/http.service';
 
 interface UserData {
-  id?: number;
+  _id: string;
+  id?: string;
   username: string;
   password?: string;
-  role: 'admin' | 'user';
-  rol: 'admin' | 'usuario'; // Agregamos también 'rol' para consistencia
+  rol: 'admin' | 'user';
   fechaCreacion?: string;
   nombre?: string;
   email?: string;
   telefono?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface RegistroData {
@@ -24,6 +27,22 @@ interface RegistroData {
   password: string;
   confirmPassword: string;
   telefono?: string;
+}
+
+interface LoginResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  token: string;
+  usuario: UserData;
+}
+
+interface RegistroResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  token: string;
+  usuario: UserData;
 }
 
 @Component({
@@ -37,7 +56,7 @@ export class LoginPage {
   username: string = '';
   password: string = '';
   errorMessage: string = '';
-  loginType: string = 'admin'; // 'admin' o 'user'
+  loginType: string = 'user'; // Por defecto 'user', cambiará a 'admin' según el usuario
   showPassword: boolean = false;
   
   // Variables para el registro
@@ -51,10 +70,15 @@ export class LoginPage {
     confirmPassword: '',
     telefono: ''
   };
+
+  // Estados de carga
+  isLoading: boolean = false;
+  isRegistering: boolean = false;
   
   constructor(
     private router: Router,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private httpService: HttpService
   ) {}
 
   // Alternar visibilidad de contraseña
@@ -86,124 +110,156 @@ export class LoginPage {
     );
   }
 
-  // Método de login principal
+  // MÉTODO DE LOGIN PRINCIPAL - CORREGIDO PARA MONGODB
   async login(): Promise<void> {
     this.errorMessage = '';
+    this.isLoading = true;
     
     if (!this.isFormValid()) {
       this.errorMessage = 'Por favor, completa todos los campos';
       await this.mostrarToast('Por favor, completa todos los campos', 'warning');
+      this.isLoading = false;
       return;
     }
 
     try {
-      if (this.loginType === 'admin') {
-        await this.loginAsAdmin();
+      // Preparar datos para enviar al backend
+      const loginData = {
+        username: this.username.trim(),
+        password: this.password
+        // Removemos loginType ya que el rol se determina desde la base de datos
+      };
+
+      console.log('🔐 Enviando datos de login:', { ...loginData, password: '***' });
+
+      // Llamar al backend
+      const response = await this.httpService.login(loginData).toPromise() as LoginResponse;
+
+      if (response && response.success && response.token && response.usuario) {
+        // Login exitoso
+        console.log('✅ Login exitoso:', { ...response, token: '***' });
+        
+        // Procesar respuesta del servidor MongoDB
+        const userData: UserData = {
+          _id: response.usuario._id,
+          id: response.usuario._id, // Para compatibilidad
+          username: response.usuario.username,
+          nombre: response.usuario.nombre || response.usuario.username,
+          email: response.usuario.email || '',
+          telefono: response.usuario.telefono || '',
+          rol: response.usuario.rol, // Este viene directamente de MongoDB
+          fechaCreacion: response.usuario.createdAt || response.usuario.fechaCreacion || new Date().toISOString().split('T')[0]
+        };
+
+        // Determinar tipo de login basado en el rol del usuario
+        this.loginType = userData.rol;
+
+        // Guardar token y datos del usuario
+        this.guardarDatosUsuario(userData, response.token);
+        
+        // Mostrar mensaje personalizado según el rol
+        const mensajeBienvenida = userData.rol === 'admin' 
+          ? `¡Bienvenido Admin ${userData.nombre}! 🔧`
+          : `¡Bienvenido ${userData.nombre}! 🛍️`;
+          
+        await this.mostrarToast(mensajeBienvenida, 'success');
+        
+        // Log para verificar permisos
+        console.log(`👤 Usuario logueado: ${userData.nombre} | Rol: ${userData.rol} | Admin: ${userData.rol === 'admin'}`);
+        
+        // Navegar a home
+        console.log('🚀 Navegando a /home con userData:', userData);
+        
+        const success = await this.router.navigate(['/home']);
+        if (success) {
+          console.log('✅ Navegación exitosa');
+        } else {
+          console.error('❌ Error en la navegación');
+        }
+        
       } else {
-        await this.loginAsUser();
+        throw new Error('Respuesta inválida del servidor');
       }
-    } catch (error) {
-      console.error('Error durante el login:', error);
-      this.errorMessage = 'Error interno del sistema. Intenta nuevamente.';
-      await this.mostrarToast('Error interno del sistema', 'danger');
+
+    } catch (error: any) {
+      console.error('❌ Error durante el login:', error);
+      
+      // Manejar diferentes tipos de errores
+      if (error.status === 401 || error.status === 400) {
+        this.errorMessage = 'Credenciales incorrectas';
+        await this.mostrarToast('Usuario o contraseña incorrectos', 'danger');
+      } else if (error.status === 404) {
+        this.errorMessage = 'Usuario no encontrado';
+        await this.mostrarToast('Usuario no encontrado', 'danger');
+      } else if (error.status === 403) {
+        this.errorMessage = 'Acceso denegado';
+        await this.mostrarToast('Acceso denegado', 'danger');
+      } else if (error.status === 0) {
+        this.errorMessage = 'No se puede conectar con el servidor. Verifica que el backend esté ejecutándose.';
+        await this.mostrarToast('Error de conexión con el servidor', 'danger');
+      } else if (error.error && error.error.message) {
+        this.errorMessage = error.error.message;
+        await this.mostrarToast(error.error.message, 'danger');
+      } else if (error.error && error.error.error) {
+        this.errorMessage = error.error.error;
+        await this.mostrarToast(error.error.error, 'danger');
+      } else {
+        this.errorMessage = 'Error interno del sistema. Intenta nuevamente.';
+        await this.mostrarToast('Error interno del sistema', 'danger');
+      }
+    } finally {
+      this.isLoading = false;
     }
   }
 
-  // Login como administrador
-  private async loginAsAdmin(): Promise<void> {
-    if (this.username === 'admin' && this.password === 'admin123') {
-      const adminData: UserData = {
-        id: 1,
-        username: 'admin',
-        role: 'admin',
-        rol: 'admin', // CONSISTENCIA: ambos campos con mismo valor
-        nombre: 'Administrador',
-        email: 'admin@ferreteria.com',
-        fechaCreacion: new Date().toISOString().split('T')[0]
-      };
-
-      // Guardar información del usuario con estructura unificada
-      this.guardarDatosUsuario(adminData);
-      
-      // Mostrar toast de bienvenida
-      await this.mostrarToast('¡Bienvenido Administrador!', 'success');
-      
-      console.log('Navegando a /home como admin', adminData);
-      
-      try {
-        const success = await this.router.navigate(['/home']);
-        console.log('Navegación exitosa:', success);
-      } catch (error) {
-        console.error('Error en navegación:', error);
-        this.errorMessage = 'Error al navegar a la página principal';
-        await this.mostrarToast('Error al navegar', 'danger');
-      }
-    } else {
-      this.errorMessage = 'Credenciales de administrador incorrectas';
-      await this.mostrarToast('Credenciales incorrectas', 'danger');
-    }
-  }
-
-  // Login como usuario
-  private async loginAsUser(): Promise<void> {
-    const registrousuario = JSON.parse(localStorage.getItem('registrousuario') || '[]');
-    const user = registrousuario.find((u: any) => u.username === this.username);
-
-    if (user && user.password === this.password) {
-      const userData: UserData = {
-        id: user.id || Date.now(),
-        username: user.username,
-        role: 'user',
-        rol: 'usuario', // CONSISTENCIA: rol como 'usuario' para users normales
-        nombre: user.nombre || user.username,
-        email: user.email,
-        telefono: user.telefono || '',
-        fechaCreacion: user.fechaCreacion || new Date().toISOString().split('T')[0]
-      };
-
-      // Guardar información del usuario con estructura unificada
-      this.guardarDatosUsuario(userData);
-      
-      // Mostrar toast de bienvenida
-      await this.mostrarToast(`¡Bienvenido ${userData.nombre}!`, 'success');
-      
-      console.log('Navegando a /home como usuario', userData);
-      
-      try {
-        const success = await this.router.navigate(['/home']);
-        console.log('Navegación exitosa:', success);
-      } catch (error) {
-        console.error('Error en navegación:', error);
-        this.errorMessage = 'Error al navegar a la página principal';
-        await this.mostrarToast('Error al navegar', 'danger');
-      }
-    } else {
-      this.errorMessage = 'Credenciales incorrectas o usuario no registrado';
-      await this.mostrarToast('Credenciales incorrectas', 'danger');
-    }
-  }
-
-  // Guardar datos del usuario en localStorage con estructura unificada
-  private guardarDatosUsuario(userData: UserData): void {
+  // Guardar datos del usuario con token - MEJORADO PARA MONGODB
+  private guardarDatosUsuario(userData: UserData, token: string): void {
     try {
-      // Información completa del usuario
+      // Limpiar datos anteriores primero
+      this.limpiarSesionAnterior();
+
+      // Guardar token para las peticiones autenticadas
+      localStorage.setItem('token', token);
+      
+      // Información completa del usuario (formato MongoDB)
       localStorage.setItem('userData', JSON.stringify(userData));
       
       // Información de sesión (compatibilidad con sistema actual)
       localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('role', userData.role);
-      localStorage.setItem('rol', userData.rol); // NUEVO: también guardamos 'rol'
-      localStorage.setItem('userType', userData.role); // Para compatibilidad con HomePage
+      localStorage.setItem('rol', userData.rol);
+      localStorage.setItem('userType', userData.rol);
       localStorage.setItem('currentUser', JSON.stringify(userData));
       localStorage.setItem('userName', userData.nombre || userData.username);
       localStorage.setItem('userEmail', userData.email || '');
+      localStorage.setItem('userId', userData._id);
       
-      console.log('Datos de usuario guardados:', userData);
-      console.log('LocalStorage role:', userData.role);
-      console.log('LocalStorage rol:', userData.rol);
+      // Marcar timestamp de la sesión
+      localStorage.setItem('sessionTimestamp', Date.now().toString());
+      
+      console.log('💾 Datos de usuario guardados correctamente:');
+      console.log('  - ID:', userData._id);
+      console.log('  - Nombre:', userData.nombre);
+      console.log('  - Username:', userData.username);
+      console.log('  - Email:', userData.email);
+      console.log('  - Rol:', userData.rol);
+      console.log('  - Es Admin:', userData.rol === 'admin');
+      console.log('  - Token guardado:', !!token);
+      
     } catch (error) {
-      console.error('Error al guardar datos del usuario:', error);
+      console.error('❌ Error al guardar datos del usuario:', error);
     }
+  }
+
+  // Limpiar sesión anterior
+  private limpiarSesionAnterior(): void {
+    const itemsALimpiar = [
+      'token', 'userData', 'isLoggedIn', 'rol', 'userType',
+      'currentUser', 'userName', 'userEmail', 'userId', 'sessionTimestamp', 'carrito'
+    ];
+
+    itemsALimpiar.forEach(item => {
+      localStorage.removeItem(item);
+    });
   }
 
   // Toggle para mostrar/ocultar formulario de registro
@@ -215,56 +271,101 @@ export class LoginPage {
     }
   }
 
-  // Registrar nuevo usuario - mejorado para integración
+  // REGISTRAR NUEVO USUARIO - CORREGIDO PARA MONGODB
   async registrarUsuario(): Promise<void> {
     this.errorMessage = '';
+    this.isRegistering = true;
 
     if (!this.isRegistroFormValid()) {
       this.errorMessage = 'Por favor, completa todos los campos correctamente';
       await this.mostrarToast('Por favor, completa todos los campos correctamente', 'warning');
+      this.isRegistering = false;
       return;
     }
 
     if (this.registroData.password !== this.registroData.confirmPassword) {
       this.errorMessage = 'Las contraseñas no coinciden';
       await this.mostrarToast('Las contraseñas no coinciden', 'warning');
+      this.isRegistering = false;
       return;
     }
 
     if (this.registroData.password.length < 6) {
       this.errorMessage = 'La contraseña debe tener al menos 6 caracteres';
       await this.mostrarToast('La contraseña debe tener al menos 6 caracteres', 'warning');
+      this.isRegistering = false;
       return;
     }
 
     try {
-      // Verificar si el usuario ya existe
-      if (this.verificarUsuarioExiste(this.registroData.username, this.registroData.email)) {
-        this.errorMessage = 'El usuario o email ya existe';
-        await this.mostrarToast('El usuario o email ya existe', 'danger');
-        return;
-      }
+      // Preparar datos para el backend (MongoDB)
+      const registroDataBackend = {
+        username: this.registroData.username.trim(),
+        email: this.registroData.email.trim().toLowerCase(),
+        password: this.registroData.password,
+        nombre: this.registroData.nombre.trim(),
+        telefono: this.registroData.telefono?.trim() || '',
+        rol: 'user' // Los usuarios registrados son 'user' por defecto
+      };
 
-      // Crear nuevo usuario
-      const nuevoUsuario = await this.crearNuevoUsuario();
-      
-      if (nuevoUsuario) {
-        await this.mostrarToast(`¡Usuario ${nuevoUsuario.username} registrado exitosamente!`, 'success');
+      console.log('📝 Enviando datos de registro:', { ...registroDataBackend, password: '***' });
+
+      // Llamar al backend para registrar
+      const response = await this.httpService.registro(registroDataBackend).toPromise() as RegistroResponse;
+
+      if (response && response.success && response.token && response.usuario) {
+        console.log('✅ Registro exitoso:', { ...response, token: '***' });
+        
+        await this.mostrarToast(`¡Usuario ${response.usuario.username} registrado exitosamente! 🎉`, 'success');
         
         // Limpiar formulario y ocultar sección de registro
         this.limpiarFormularioRegistro();
         this.showRegistro = false;
         
-        // Auto-login del nuevo usuario
-        this.username = nuevoUsuario.username;
-        this.password = this.registroData.password;
-        this.loginType = 'user'; // Asegurar que esté en modo usuario
-        await this.loginAsUser();
+        // Procesar datos del usuario recién registrado
+        const userData: UserData = {
+          _id: response.usuario._id,
+          id: response.usuario._id,
+          username: response.usuario.username,
+          nombre: response.usuario.nombre,
+          email: response.usuario.email,
+          telefono: response.usuario.telefono || '',
+          rol: response.usuario.rol || 'user',
+          fechaCreacion: response.usuario.createdAt || new Date().toISOString().split('T')[0]
+        };
+
+        // Guardar datos del usuario registrado y hacer auto-login
+        this.guardarDatosUsuario(userData, response.token);
+        
+        console.log(`👤 Usuario registrado y logueado: ${userData.nombre} | Rol: ${userData.rol}`);
+        
+        // Navegar a home
+        await this.router.navigate(['/home']);
+        
+      } else {
+        throw new Error(response?.message || 'Respuesta inválida del servidor');
       }
-    } catch (error) {
-      console.error('Error durante el registro:', error);
-      this.errorMessage = 'Error al registrar usuario. Intenta nuevamente.';
-      await this.mostrarToast('Error al registrar usuario', 'danger');
+
+    } catch (error: any) {
+      console.error('❌ Error durante el registro:', error);
+      
+      // Manejar diferentes tipos de errores
+      if (error.status === 409 || error.status === 400) {
+        const message = error.error?.message || error.error?.error || 'El usuario o email ya existe';
+        this.errorMessage = message;
+        await this.mostrarToast(message, 'danger');
+      } else if (error.status === 422) {
+        this.errorMessage = 'Datos inválidos. Verifica la información ingresada.';
+        await this.mostrarToast('Datos inválidos', 'danger');
+      } else if (error.status === 0) {
+        this.errorMessage = 'No se puede conectar con el servidor';
+        await this.mostrarToast('Error de conexión con el servidor', 'danger');
+      } else {
+        this.errorMessage = error.error?.message || 'Error al registrar usuario. Intenta nuevamente.';
+        await this.mostrarToast('Error al registrar usuario', 'danger');
+      }
+    } finally {
+      this.isRegistering = false;
     }
   }
 
@@ -286,48 +387,6 @@ export class LoginPage {
       telefono: ''
     };
     this.showPasswordRegistro = false;
-  }
-
-  // Verificar si el usuario ya existe
-  private verificarUsuarioExiste(username: string, email: string): boolean {
-    try {
-      const usuariosRegistrados = JSON.parse(localStorage.getItem('registrousuario') || '[]');
-      return usuariosRegistrados.some((user: any) => 
-        user.username.toLowerCase() === username.toLowerCase() ||
-        user.email.toLowerCase() === email.toLowerCase()
-      );
-    } catch (error) {
-      console.error('Error al verificar usuario existente:', error);
-      return false;
-    }
-  }
-
-  // Crear nuevo usuario - mejorado con estructura consistente
-  private async crearNuevoUsuario(): Promise<UserData> {
-    try {
-      const usuariosRegistrados = JSON.parse(localStorage.getItem('registrousuario') || '[]');
-      
-      const nuevoUsuario: UserData = {
-        id: usuariosRegistrados.length + 1,
-        username: this.registroData.username.trim(),
-        password: this.registroData.password,
-        nombre: this.registroData.nombre.trim(),
-        email: this.registroData.email.trim().toLowerCase(),
-        telefono: this.registroData.telefono?.trim() || '',
-        role: 'user',
-        rol: 'usuario', // CONSISTENCIA: usuarios normales como 'usuario'
-        fechaCreacion: new Date().toISOString().split('T')[0]
-      };
-
-      usuariosRegistrados.push(nuevoUsuario);
-      localStorage.setItem('registrousuario', JSON.stringify(usuariosRegistrados));
-      
-      console.log('Nuevo usuario creado:', nuevoUsuario);
-      return nuevoUsuario;
-    } catch (error) {
-      console.error('Error al crear nuevo usuario:', error);
-      throw error;
-    }
   }
 
   // Validar formato de email
@@ -353,25 +412,27 @@ export class LoginPage {
       });
       await toast.present();
     } catch (error) {
-      console.error('Error al mostrar toast:', error);
+      console.error('❌ Error al mostrar toast:', error);
     }
   }
+
+  // MÉTODOS ESTÁTICOS ACTUALIZADOS PARA MONGODB
 
   // Método para limpiar sesión (útil para logout)
   static limpiarSesion(): void {
     try {
-      localStorage.removeItem('userData');
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('role');
-      localStorage.removeItem('rol');
-      localStorage.removeItem('userType');
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('carrito');
-      console.log('Sesión limpiada correctamente');
+      const itemsALimpiar = [
+        'token', 'userData', 'isLoggedIn', 'rol', 'userType',
+        'currentUser', 'userName', 'userEmail', 'userId', 'sessionTimestamp', 'carrito'
+      ];
+
+      itemsALimpiar.forEach(item => {
+        localStorage.removeItem(item);
+      });
+
+      console.log('🧹 Sesión limpiada correctamente');
     } catch (error) {
-      console.error('Error al limpiar sesión:', error);
+      console.error('❌ Error al limpiar sesión:', error);
     }
   }
 
@@ -379,51 +440,153 @@ export class LoginPage {
   static obtenerUsuarioActual(): UserData | null {
     try {
       const userData = localStorage.getItem('userData');
-      return userData ? JSON.parse(userData) : null;
+      if (userData) {
+        const user = JSON.parse(userData);
+        console.log('👤 Usuario actual obtenido:', {
+          id: user._id,
+          nombre: user.nombre,
+          rol: user.rol,
+          esAdmin: user.rol === 'admin'
+        });
+        return user;
+      }
+      return null;
     } catch (error) {
-      console.error('Error al obtener usuario actual:', error);
+      console.error('❌ Error al obtener usuario actual:', error);
       return null;
     }
   }
 
+  // Método para obtener el token
+  static obtenerToken(): string | null {
+    const token = localStorage.getItem('token');
+    console.log('🔑 Token obtenido:', token ? 'Disponible' : 'No disponible');
+    return token;
+  }
+
   // Método para verificar si el usuario está logueado
   static estaLogueado(): boolean {
-    return localStorage.getItem('isLoggedIn') === 'true';
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const hasToken = !!localStorage.getItem('token');
+    const hasUserData = !!localStorage.getItem('userData');
+    
+    const result = isLoggedIn && hasToken && hasUserData;
+    console.log('🔍 Verificación de sesión:', {
+      isLoggedIn,
+      hasToken,
+      hasUserData,
+      result
+    });
+    
+    return result;
   }
 
-  // Método para obtener el rol del usuario actual - MEJORADO
+  // Método para obtener el rol del usuario actual
   static obtenerRolUsuario(): 'admin' | 'user' | null {
-    const role = localStorage.getItem('role');
-    return role === 'admin' || role === 'user' ? role : null;
+    try {
+      const userData = this.obtenerUsuarioActual();
+      if (userData && userData.rol) {
+        console.log('👤 Rol obtenido:', userData.rol);
+        return userData.rol;
+      }
+      
+      // Fallback al rol en localStorage directo
+      const rol = localStorage.getItem('rol');
+      return rol === 'admin' || rol === 'user' ? rol as 'admin' | 'user' : null;
+    } catch (error) {
+      console.error('❌ Error obteniendo rol:', error);
+      return null;
+    }
   }
 
-  // NUEVO: Método para verificar si es admin
+  // Método para verificar si es admin - CORREGIDO
   static esAdmin(): boolean {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        return user.role === 'admin' || user.rol === 'admin';
-      } catch (error) {
-        console.error('Error al verificar rol de admin:', error);
-        return false;
+    try {
+      const userData = this.obtenerUsuarioActual();
+      if (userData) {
+        const isAdmin = userData.rol === 'admin';
+        console.log('🔧 Verificación Admin:', {
+          usuario: userData.nombre,
+          rol: userData.rol,
+          esAdmin: isAdmin
+        });
+        return isAdmin;
       }
+
+      // Fallback
+      const rol = localStorage.getItem('rol');
+      const isAdmin = rol === 'admin';
+      console.log('🔧 Verificación Admin (fallback):', { rol, isAdmin });
+      return isAdmin;
+    } catch (error) {
+      console.error('❌ Error verificando rol de admin:', error);
+      return false;
     }
-    return false;
   }
 
-  // NUEVO: Método para verificar si es usuario normal
+  // Método para verificar si es usuario normal - CORREGIDO
   static esUsuario(): boolean {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        return user.role === 'user' || user.rol === 'usuario';
-      } catch (error) {
-        console.error('Error al verificar rol de usuario:', error);
+    try {
+      const userData = this.obtenerUsuarioActual();
+      if (userData) {
+        const isUser = userData.rol === 'user';
+        console.log('👤 Verificación Usuario:', {
+          usuario: userData.nombre,
+          rol: userData.rol,
+          esUsuario: isUser
+        });
+        return isUser;
+      }
+
+      // Fallback
+      const rol = localStorage.getItem('rol');
+      const isUser = rol === 'user';
+      console.log('👤 Verificación Usuario (fallback):', { rol, isUser });
+      return isUser;
+    } catch (error) {
+      console.error('❌ Error verificando rol de usuario:', error);
+      return false;
+    }
+  }
+
+  // Método adicional para debugging
+  static debug(): void {
+    console.log('🐛 DEBUG - Estado de la sesión:');
+    console.log('  - Token:', this.obtenerToken() ? 'Disponible' : 'No disponible');
+    console.log('  - Usuario actual:', this.obtenerUsuarioActual());
+    console.log('  - Está logueado:', this.estaLogueado());
+    console.log('  - Es admin:', this.esAdmin());
+    console.log('  - Es usuario:', this.esUsuario());
+    console.log('  - Rol:', this.obtenerRolUsuario());
+  }
+
+  // Método para validar token (útil para guards)
+  static async validarToken(httpService: HttpService): Promise<boolean> {
+    try {
+      const token = this.obtenerToken();
+      if (!token) {
+        console.log('🔑 No hay token disponible');
         return false;
       }
+
+      // Aquí podrías hacer una llamada al backend para validar el token
+      // const response = await httpService.validateToken().toPromise();
+      // return response.valid;
+
+      // Por ahora, verificamos que exista el token y los datos del usuario
+      const userData = this.obtenerUsuarioActual();
+      const isValid = !!userData && !!userData._id;
+      
+      console.log('🔍 Validación de token:', {
+        hasToken: !!token,
+        hasUserData: !!userData,
+        isValid
+      });
+
+      return isValid;
+    } catch (error) {
+      console.error('❌ Error validando token:', error);
+      return false;
     }
-    return false;
   }
 }

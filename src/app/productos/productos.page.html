@@ -48,6 +48,51 @@
     </ion-card>
   </div>
 
+  <!-- PANEL DE DEBUG (Solo visible para admins o testing) -->
+  <ion-card *ngIf="esAdmin || true" class="debug-section">
+    <ion-card-header>
+      <ion-card-title color="warning">🔧 Panel de Debug</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      
+      <!-- Estado actual -->
+      <div class="estado-actual">
+        <p><strong>Estado:</strong> Activo</p>
+        <p><strong>Admin:</strong> {{ esAdmin ? '✅ Sí' : '❌ No' }}</p>
+        <p><strong>Usuario:</strong> {{ usuarioActual.nombre || 'Sin usuario' }}</p>
+        <p><strong>Productos:</strong> {{ productos.length }}</p>
+      </div>
+      
+      <!-- Botones de debug -->
+      <div class="botones-debug">
+        <ion-button 
+          fill="outline" 
+          color="tertiary" 
+          size="small"
+          (click)="recargarProductos()">
+          🔄 Recargar Productos
+        </ion-button>
+        
+        <ion-button 
+          fill="outline" 
+          color="success" 
+          size="small"
+          (click)="sincronizarConAPI()">
+          📡 Sincronizar API
+        </ion-button>
+        
+        <ion-button 
+          fill="outline" 
+          color="medium" 
+          size="small"
+          (click)="verificarEstadoSesion()">
+          🔍 Ver Estado
+        </ion-button>
+      </div>
+      
+    </ion-card-content>
+  </ion-card>
+
   <!-- CARRITO MEJORADO CON MEJOR DISEÑO -->
   <div class="cart-section" *ngIf="!esAdmin && mostrarCarrito">
     <ion-card class="cart-card-modern">

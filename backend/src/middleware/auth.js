@@ -1,83 +1,79 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User'); // Ajusta la ruta según tu estructura
 
-// Configuración de JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_muy_segura_aqui';
+console.log('🔐 Cargando middleware de autenticación...');
 
 /**
- * Middleware de autenticación principal - Token requerido
+ * Middleware principal de autenticación
+ * Requiere que el usuario esté autenticado
  */
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
-    console.log('🔐 Verificando autenticación...');
-    
     // Obtener token del header Authorization
-    const authHeader = req.headers.authorization;
+    const authHeader = req.header('Authorization');
     
     if (!authHeader) {
-      console.log('❌ No se encontró header de autorización');
       return res.status(401).json({
         success: false,
-        error: 'Token de acceso requerido',
-        message: 'Debe proporcionar un token de autenticación',
-        code: 'NO_TOKEN'
+        error: 'Acceso denegado',
+        message: 'No se proporcionó token de autenticación'
       });
     }
 
-    // Verificar formato "Bearer TOKEN"
-    const parts = authHeader.split(' ');
-    let token;
-    
-    if (parts.length === 2 && parts[0] === 'Bearer') {
-      token = parts[1];
-    } else if (authHeader.startsWith('Bearer ')) {
-      token = authHeader.slice(7);
-    } else {
-      token = authHeader;
+    // Verificar formato del token (Bearer token)
+    const token = authHeader.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : authHeader;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: 'Acceso denegado',
+        message: 'Token de autenticación requerido'
+      });
     }
 
-    if (!token || token === 'undefined' || token === 'null') {
-      console.log('❌ Token vacío o inválido');
+    // Verificar y decodificar el token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Opcional: Verificar que el usuario aún existe en la base de datos
+    const user = await User.findById(decoded.id);
+    if (!user) {
       return res.status(401).json({
         success: false,
         error: 'Token inválido',
-        message: 'El token proporcionado no es válido',
-        code: 'INVALID_TOKEN'
+        message: 'El usuario asociado al token no existe'
       });
     }
 
-    console.log('🔍 Verificando token...');
+    // Verificar que el usuario esté activo
+    if (!user.activo) {
+      return res.status(401).json({
+        success: false,
+        error: 'Usuario inactivo',
+        message: 'Su cuenta ha sido desactivada'
+      });
+    }
 
-    // Verificar y decodificar el token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('✅ Token válido para usuario:', decoded.id || decoded.userId);
-
-    // Agregar información del usuario a la request (compatibilidad con ambos formatos)
+    // Agregar información del usuario al request
     req.user = {
-      id: decoded.id || decoded.userId,
-      email: decoded.email,
-      role: decoded.role || decoded.rol || 'user',
-      nombre: decoded.nombre || decoded.name
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      rol: user.rol,
+      activo: user.activo
     };
 
-    console.log('🔐 Usuario autenticado:', {
-      id: req.user.id,
-      email: req.user.email,
-      role: req.user.role
-    });
-
-    // Continuar al siguiente middleware o controlador
     next();
-
   } catch (error) {
-    console.error('❌ Error en verificación de token:', error.message);
+    console.error('❌ Error en authMiddleware:', error);
     
-    // Manejar diferentes tipos de errores JWT
+    // Manejar errores específicos de JWT
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
-        error: 'Token malformado',
-        message: 'El formato del token no es válido',
-        code: 'INVALID_TOKEN'
+        error: 'Token inválido',
+        message: 'El token de autenticación no es válido'
       });
     }
     
@@ -85,209 +81,191 @@ const authMiddleware = (req, res, next) => {
       return res.status(401).json({
         success: false,
         error: 'Token expirado',
-        message: 'Su sesión ha expirado, por favor inicie sesión nuevamente',
-        code: 'EXPIRED_TOKEN',
-        expiredAt: error.expiredAt
+        message: 'Su sesión ha expirado, por favor inicie sesión nuevamente'
       });
     }
     
-    if (error.name === 'NotBeforeError') {
-      return res.status(401).json({
-        success: false,
-        error: 'Token no activo',
-        message: 'El token aún no es válido',
-        code: 'TOKEN_NOT_ACTIVE'
-      });
-    }
-
     // Error genérico
-    return res.status(401).json({
+    return res.status(500).json({
       success: false,
-      error: 'Error de autenticación',
-      message: 'No se pudo verificar la autenticación',
-      code: 'AUTH_ERROR'
+      error: 'Error interno',
+      message: 'Error al verificar la autenticación'
     });
   }
 };
 
 /**
- * Middleware de autenticación opcional - Token no requerido
- * Si se proporciona token, lo verifica. Si no, continúa como invitado
+ * Middleware de autenticación opcional
+ * No requiere autenticación, pero si hay token válido, agrega info del usuario
  */
-const authOptional = (req, res, next) => {
+const authOptional = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = req.header('Authorization');
     
-    if (!authHeader || authHeader === 'undefined') {
-      console.log('🚶 Acceso como invitado - sin token');
-      req.user = null;
-      return next();
+    if (!authHeader) {
+      return next(); // Continuar sin usuario
     }
 
-    // Verificar formato
-    const parts = authHeader.split(' ');
-    let token;
-    
-    if (parts.length === 2 && parts[0] === 'Bearer') {
-      token = parts[1];
-    } else if (authHeader.startsWith('Bearer ')) {
-      token = authHeader.slice(7);
-    } else {
-      token = authHeader;
+    const token = authHeader.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : authHeader;
+
+    if (!token) {
+      return next(); // Continuar sin usuario
     }
+
+    // Intentar decodificar el token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
     
-    if (!token || token === 'undefined' || token === 'null') {
-      req.user = null;
-      return next();
+    if (user && user.activo) {
+      req.user = {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        rol: user.rol,
+        activo: user.activo
+      };
     }
-    
-    // Verificar token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    req.user = {
-      id: decoded.id || decoded.userId,
-      email: decoded.email,
-      role: decoded.role || decoded.rol || 'user',
-      nombre: decoded.nombre || decoded.name
-    };
-    
-    console.log('🔐 Usuario autenticado (opcional):', {
-      id: req.user.id,
-      email: req.user.email,
-      role: req.user.role
-    });
-    
+
     next();
-    
   } catch (error) {
-    // En auth opcional, si hay error, continuar como invitado
-    console.log('⚠️ Token inválido, continuando como invitado:', error.message);
-    req.user = null;
+    // En caso de error, simplemente continuar sin usuario
+    console.log('ℹ️ Token opcional inválido, continuando sin autenticación');
     next();
   }
 };
 
 /**
- * Middleware para verificar roles específicos
- * @param {string|Array} roles - Rol o array de roles permitidos
- */
-const requireRole = (roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Autenticación requerida',
-        message: 'Debe iniciar sesión para acceder a este recurso'
-      });
-    }
-    
-    const userRole = req.user.role;
-    const allowedRoles = Array.isArray(roles) ? roles : [roles];
-    
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Permisos insuficientes',
-        message: 'No tiene los permisos necesarios para acceder a este recurso',
-        requiredRoles: allowedRoles,
-        userRole: userRole
-      });
-    }
-    
-    console.log('✅ Usuario con rol válido:', {
-      email: req.user.email,
-      role: userRole,
-      requiredRoles: allowedRoles
-    });
-    
-    next();
-  };
-};
-
-/**
- * Middleware para verificar rol de administrador
+ * Middleware que requiere rol de administrador
+ * Debe usarse después de authMiddleware
  */
 const requireAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
-      error: 'Autenticación requerida',
-      message: 'Debe iniciar sesión para acceder a este recurso'
+      error: 'No autenticado',
+      message: 'Debe estar autenticado para acceder a esta ruta'
     });
   }
 
-  if (req.user.role !== 'admin') {
+  if (req.user.rol !== 'admin') {
     return res.status(403).json({
       success: false,
-      error: 'Acceso denegado',
-      message: 'Se requieren privilegios de administrador',
-      userRole: req.user.role
+      error: 'Acceso prohibido',
+      message: 'Se requieren permisos de administrador para esta acción'
     });
   }
 
-  console.log('✅ Usuario admin verificado:', req.user.email);
   next();
 };
 
 /**
- * Middleware para verificar que el usuario puede acceder a sus propios recursos
- * Los admins pueden acceder a cualquier recurso
+ * Middleware que requiere un rol específico
+ * Debe usarse después de authMiddleware
  */
-const requireOwnershipOrAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      error: 'Autenticación requerida',
-      message: 'Debe iniciar sesión para acceder a este recurso'
-    });
-  }
+const requireRole = (requiredRole) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'No autenticado',
+        message: 'Debe estar autenticado para acceder a esta ruta'
+      });
+    }
 
-  // Admin puede acceder a todo
-  if (req.user.role === 'admin') {
-    console.log('✅ Acceso de admin a recurso:', req.user.email);
-    return next();
-  }
+    // Permitir admin para cualquier rol
+    if (req.user.rol === 'admin') {
+      return next();
+    }
 
-  // Obtener ID del recurso de diferentes fuentes posibles
-  const resourceUserId = req.params.userId || 
-                        req.params.id || 
-                        req.body.userId || 
-                        req.body.id ||
-                        req.query.userId;
-  
-  // Usuario solo puede acceder a sus propios recursos
-  if (req.user.id === resourceUserId || req.user.id === parseInt(resourceUserId)) {
-    console.log('✅ Acceso a recurso propio:', {
-      userId: req.user.id,
-      resourceId: resourceUserId
-    });
-    return next();
-  }
+    // Verificar rol específico
+    if (req.user.rol !== requiredRole) {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso prohibido',
+        message: `Se requiere rol de ${requiredRole} para esta acción`
+      });
+    }
 
-  console.log('❌ Intento de acceso no autorizado:', {
-    userId: req.user.id,
-    resourceId: resourceUserId,
-    userRole: req.user.role
-  });
-
-  return res.status(403).json({
-    success: false,
-    error: 'Acceso denegado',
-    message: 'Solo puede acceder a sus propios recursos'
-  });
+    next();
+  };
 };
 
-// Alias para compatibilidad hacia atrás
-const optionalAuth = authOptional;
+/**
+ * Middleware que requiere múltiples roles permitidos
+ * Debe usarse después de authMiddleware
+ */
+const requireRoles = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'No autenticado',
+        message: 'Debe estar autenticado para acceder a esta ruta'
+      });
+    }
+
+    // Admin siempre tiene acceso
+    if (req.user.rol === 'admin') {
+      return next();
+    }
+
+    // Verificar si el rol del usuario está en los roles permitidos
+    if (!allowedRoles.includes(req.user.rol)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso prohibido',
+        message: `Se requiere uno de estos roles: ${allowedRoles.join(', ')}`
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Middleware que verifica si el usuario puede acceder a su propio recurso o es admin
+ * Útil para rutas como /usuarios/:id donde solo el propio usuario o admin pueden acceder
+ */
+const requireOwnershipOrAdmin = (userIdParam = 'id') => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'No autenticado',
+        message: 'Debe estar autenticado para acceder a esta ruta'
+      });
+    }
+
+    const targetUserId = req.params[userIdParam];
+    const currentUserId = req.user.id.toString();
+
+    // Admin puede acceder a cualquier recurso
+    if (req.user.rol === 'admin') {
+      return next();
+    }
+
+    // El usuario puede acceder solo a sus propios recursos
+    if (targetUserId === currentUserId) {
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      error: 'Acceso prohibido',
+      message: 'Solo puede acceder a sus propios recursos'
+    });
+  };
+};
+
+console.log('✅ Middleware de autenticación cargado exitosamente');
 
 module.exports = {
-  // Middlewares principales
   authMiddleware,
   authOptional,
-  optionalAuth, // Alias para compatibilidad
-  
-  // Middlewares de autorización
-  requireRole,
   requireAdmin,
+  requireRole,
+  requireRoles,
   requireOwnershipOrAdmin
 };

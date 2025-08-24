@@ -48,8 +48,10 @@ const connectDB = async () => {
     console.log('🔄 Conectando a MongoDB...');
     console.log('📍 URI:', mongoURI);
     
-    // ✅ CORREGIDO: Sin opciones deprecated
-    await mongoose.connect(mongoURI);
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     
     console.log('✅ MongoDB conectado exitosamente');
     console.log('🏢 Base de datos:', mongoose.connection.name);
