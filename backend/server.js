@@ -4,6 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
+const os = require('os');
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,11 +19,17 @@ app.use(morgan('combined'));
 
 app.use(cors({
   origin: [
-    'http://localhost:8100', 
-    'http://localhost:4200', 
+    'http://localhost:8100',
+    'http://localhost:4200',
     'http://localhost:3000',
+    'http://localhost',
+    'https://localhost',  //Pruebas en Android
     'ionic://localhost',
-    'http://localhost'
+    'capacitor://localhost',
+    'http://192.168.100.139:3001',
+    'http://192.168.100.139:8100',
+    'http://172.29.32.1:8100'
+    
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -227,10 +235,23 @@ app.use((error, req, res, next) => {
   });
 });
 
-// ===== INICIAR SERVIDOR =====
-const server = app.listen(PORT, () => {
+ // Mostrar todas las IPs locales
+  const interfaces = os.networkInterfaces();
+  Object.keys(interfaces).forEach((iface) => {
+    interfaces[iface].forEach((details) => {
+      if (details.family === 'IPv4' && !details.internal) {
   console.log('🚀 ================================');
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`🚀 Servidor en Red Local ${PORT}`);
+  console.log(`📡 URL en red local: http://${details.address}:${PORT}`);
+  console.log('🚀 ================================');
+      }
+    });
+  });
+
+// ===== INICIAR SERVIDOR =====
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log('🚀 ================================');
+  console.log(`🚀 Servidor corriendo en puerto http://0.0.0.0: ${PORT}`);
   console.log('🚀 ================================');
   console.log(`📍 URL local: http://localhost:${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
