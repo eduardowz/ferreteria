@@ -1,7 +1,16 @@
-// login.page.scss
+// Variables reutilizables optimizadas
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$danger-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+$success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+$border-radius: 12px;
+$shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+$white: rgba(255, 255, 255, 0.95);
+$text-color: #2c3e50;
+$text-secondary: #7d766c;
 
+// Estructura principal optimizada
 .login-background {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: #ecbb0bba;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -17,19 +26,18 @@
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 40px 30px;
+  background: $white;
+  border-radius: $border-radius;
+  padding: 30px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 420px;
   backdrop-filter: blur(10px);
-  animation: fadeIn 0.6s ease-out;
 }
 
-.logo-section {
+// Componentes comunes optimizados
+.logo-section, .additional-links {
   text-align: center;
-  margin-bottom: 30px;
 }
 
 .logo-wrapper {
@@ -48,36 +56,33 @@
 .login-title {
   font-size: 28px;
   font-weight: 700;
-  color: #2c3e50;
+  color: $text-color;
   margin: 0 0 5px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .login-subtitle {
-  color: #7f8c8d;
+  color: $text-secondary;
   font-size: 16px;
   margin: 0;
   font-weight: 500;
 }
 
-// Selector de tipo de login
+// Segmento de login optimizado
 .login-type-segment {
   margin-bottom: 25px;
-  border-radius: 12px;
+  border-radius: $border-radius;
   overflow: hidden;
   --background: #f8f9fa;
   
   ion-segment-button {
-    --color: #6c757d;
+    --color: $text-secondary;
     --color-checked: #fff;
-    --border-radius: 12px;
+    --border-radius: $border-radius;
     --indicator-color: transparent;
-    --indicator-box-shadow: none;
     font-weight: 500;
-    transition: all 0.3s ease;
     
     &.segment-button-checked {
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --background: $primary-gradient;
       --color-checked: white;
       box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
@@ -85,32 +90,26 @@
     ion-label {
       font-size: 14px;
       font-weight: 600;
-      margin-bottom: 2px;
     }
     
     ion-icon {
       font-size: 18px;
-      margin-top: 2px;
     }
   }
 }
 
-// Credenciales de demostración
+// Tarjeta de credenciales optimizada
 .demo-credentials {
   margin-bottom: 20px;
-  border-radius: 12px;
+  border-radius: $border-radius;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   background: rgba(102, 126, 234, 0.05);
   border: 1px solid rgba(102, 126, 234, 0.1);
   
-  ion-card-header {
-    padding-bottom: 8px;
-  }
-  
   .demo-title {
     font-size: 16px;
     font-weight: 600;
-    color: #2c3e50;
+    color: $text-color;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -122,24 +121,16 @@
     }
   }
   
-  ion-card-content {
-    padding-top: 5px;
-  }
-  
   .credential-info {
     font-size: 14px;
     color: #495057;
     
     p {
       margin: 5px 0;
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
     }
     
     strong {
-      color: #2c3e50;
+      color: $text-color;
       font-weight: 600;
     }
     
@@ -151,28 +142,22 @@
   }
 }
 
-// Formulario
-.login-form {
+// Formularios optimizados
+.login-form, .registro-form {
   margin-bottom: 20px;
 }
 
 .form-item {
   --background: #f8f9fa;
   --border-color: #e9ecef;
-  --color: #2c3e50;
+  --color: $text-color;
   margin-bottom: 15px;
-  border-radius: 12px;
+  border-radius: $border-radius;
   --inner-padding-top: 15px;
   --inner-padding-bottom: 15px;
   --inner-padding-start: 15px;
   --inner-padding-end: 15px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  
-  &:hover {
-    --border-color: #667eea;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
-  }
   
   &.item-has-focus {
     --border-color: #667eea;
@@ -180,75 +165,50 @@
   }
   
   ion-icon {
-    color: #6c757d;
+    color: $text-secondary;
     font-size: 20px;
     margin-right: 10px;
-    
-    &:first-child {
-      margin-right: 10px;
-    }
   }
 }
 
 .custom-input {
-  --color: #2c3e50;
-  --placeholder-color: #6c757d;
+  --color: $text-color;
+  --placeholder-color: $text-secondary;
   font-size: 16px;
   font-weight: 500;
 }
 
 .password-toggle-btn {
-  --color: #6c757d;
-  --color-hover: #667eea;
+  --color: $text-secondary;
   height: 40px;
   width: 40px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    --background: rgba(102, 126, 234, 0.1);
-  }
 }
 
-// Botones principales
+// Botones optimizados
 .login-button {
-  --border-radius: 12px;
+  --border-radius: $border-radius;
   font-size: 16px;
   font-weight: 600;
   height: 50px;
   margin-top: 15px;
   text-transform: none;
   letter-spacing: 0.5px;
-  transition: all 0.3s ease;
   
   // Color por defecto (usuario)
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: $primary-gradient;
   --color: white;
-  --box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  --box-shadow: $shadow;
   
-  // Color para admin (se aplica cuando [color]="danger")
+  // Color para admin
   &.button-color-danger {
-    --background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    --background: $danger-gradient;
     --box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
-  }
-  
-  &:hover:not([disabled]) {
-    transform: translateY(-2px);
-    --box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    
-    &.button-color-danger {
-      --box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
-    }
-  }
-  
-  &:active {
-    transform: translateY(0);
   }
   
   &[disabled] {
     --background: #bdc3c7;
     --box-shadow: none;
     opacity: 0.6;
-    cursor: not-allowed;
   }
 }
 
@@ -266,7 +226,7 @@
   
   p {
     font-size: 14px;
-    color: #6c757d;
+    color: $text-secondary;
     margin: 0;
     display: flex;
     align-items: center;
@@ -276,51 +236,18 @@
   
   ion-button {
     --color: #667eea;
-    --color-hover: #5a6fd8;
     font-size: 14px;
     font-weight: 600;
     text-transform: none;
     --padding-start: 8px;
     --padding-end: 8px;
     height: auto;
-    
-    &:hover {
-      --background: rgba(102, 126, 234, 0.1);
-    }
   }
 }
 
-// Sección de registro
+// Sección de registro optimizada
 .registro-section {
   margin-top: 30px;
-  animation: slideDown 0.4s ease-out;
-}
-
-.section-divider {
-  display: flex;
-  align-items: center;
-  margin: 25px 0 20px 0;
-  
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #e9ecef, transparent);
-  }
-  
-  .divider-text {
-    padding: 0 20px;
-    color: #6c757d;
-    font-size: 14px;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.9);
-    white-space: nowrap;
-  }
-}
-
-.registro-form {
-  margin-bottom: 20px;
 }
 
 .registro-buttons {
@@ -331,65 +258,42 @@
 }
 
 .registro-button {
-  --background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  --background: $success-gradient;
   --color: white;
-  --border-radius: 12px;
+  --border-radius: $border-radius;
   --box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
   font-size: 16px;
   font-weight: 600;
   height: 50px;
   text-transform: none;
   letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  
-  &:hover:not([disabled]) {
-    transform: translateY(-2px);
-    --box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
   
   &[disabled] {
     --background: #bdc3c7;
     --box-shadow: none;
     opacity: 0.6;
-    cursor: not-allowed;
   }
 }
 
 .cancelar-button {
-  --color: #6c757d;
-  --border-color: #6c757d;
-  --border-radius: 12px;
+  --color: $text-secondary;
+  --border-color: $text-secondary;
+  --border-radius: $border-radius;
   font-size: 16px;
   font-weight: 500;
   height: 45px;
   text-transform: none;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    --color: #495057;
-    --border-color: #495057;
-    --background: rgba(108, 117, 125, 0.1);
-  }
 }
 
 .link-button {
   --color: #667eea;
-  --color-hover: #5a6fd8;
   font-size: 14px;
   font-weight: 500;
   text-transform: none;
   margin: 5px 0;
-  
-  &:hover {
-    --background: rgba(102, 126, 234, 0.1);
-  }
 }
 
-// Mensajes de error
+// Mensajes de error optimizados
 .error-message {
   color: #e74c3c;
   text-align: center;
@@ -417,21 +321,17 @@
   }
 }
 
-// Información de roles
+// Información de roles optimizada
 .role-info {
   margin-top: 20px;
-  border-radius: 12px;
+  border-radius: $border-radius;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   background: rgba(248, 249, 250, 0.8);
   border: 1px solid rgba(233, 236, 239, 0.5);
   
-  ion-card-content {
-    padding: 20px;
-  }
-  
   .role-description {
     h3 {
-      color: #2c3e50;
+      color: $text-color;
       font-size: 18px;
       font-weight: 600;
       margin-bottom: 12px;
@@ -443,7 +343,7 @@
         content: '';
         width: 4px;
         height: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: $primary-gradient;
         border-radius: 2px;
       }
     }
@@ -468,24 +368,15 @@
           font-weight: bold;
           font-size: 12px;
         }
-        
-        &:first-child {
-          margin-top: 0;
-        }
-        
-        &:last-child {
-          margin-bottom: 0;
-        }
       }
     }
   }
 }
 
-// Footer
+// Footer optimizado
 .login-footer {
   padding: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.204);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -497,8 +388,8 @@
 
 .footer-text,
 .footer-version {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
+  color: rgb(65, 65, 65);
+  font-size: 13px;
   margin: 5px 0;
 }
 
@@ -506,7 +397,32 @@
   font-weight: 600;
 }
 
-// Responsive design
+// Toggle container optimizado
+.toggle-container {
+  width: 100%;
+  margin-bottom: 20px;
+  
+  .toggle-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    
+    .toggle-button {
+      flex: 1 1 auto;
+      min-width: 150px;
+      max-width: 200px;
+      white-space: nowrap;
+      
+      ion-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// Media queries optimizadas
 @media (max-width: 480px) {
   .login-container {
     padding: 15px;
@@ -514,9 +430,8 @@
   }
   
   .login-card {
-    padding: 30px 20px;
+    padding: 25px 20px;
     margin: 5px;
-    max-width: 100%;
   }
   
   .login-title {
@@ -567,29 +482,19 @@
     margin-top: 20px;
   }
   
-  .section-divider {
-    margin: 20px 0 15px 0;
+  .toggle-container .toggle-buttons {
+    flex-direction: row;
     
-    .divider-text {
-      font-size: 13px;
-      padding: 0 15px;
+    .toggle-button {
+      min-width: 120px;
+      font-size: 14px;
     }
-  }
-  
-  .registro-buttons {
-    gap: 8px;
-  }
-  
-  .registro-button,
-  .cancelar-button {
-    height: 45px;
-    font-size: 15px;
   }
 }
 
 @media (max-width: 320px) {
   .login-card {
-    padding: 25px 15px;
+    padding: 20px 15px;
   }
   
   .redireccionar-registro p {
@@ -597,100 +502,78 @@
     flex-direction: column;
     gap: 5px;
   }
-  
-  .section-divider .divider-text {
-    font-size: 12px;
-    padding: 0 10px;
-  }
 }
 
-// Animaciones
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInFromTop {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-    max-height: 0;
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    max-height: 1000px;
-  }
-}
-
-// Animación de entrada suave para elementos
-.demo-credentials,
-.role-info {
-  animation: fadeIn 0.8s ease-out 0.2s both;
-}
-
-.login-type-segment {
-  animation: fadeIn 0.6s ease-out 0.1s both;
-}
-
-.registro-section {
-  animation: slideDown 0.5s ease-out;
-}
-
-// Estados de hover mejorados
-@media (hover: hover) {
-  .login-type-segment ion-segment-button:hover:not(.segment-button-checked) {
-    --background: rgba(102, 126, 234, 0.1);
-    --color: #667eea;
-  }
-}
-
-// Mejoras para accesibilidad
-.form-item:focus-within {
-  --border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-}
-
-// Estilos para el modo oscuro (opcional)
+// Modo oscuro optimizado
 @media (prefers-color-scheme: dark) {
   .login-card {
-    background: rgba(45, 55, 72, 0.95);
+    background: rgba(45, 36, 30, 0.95);
     
     .login-title {
-      color: #f7fafc;
+      color: #ffffff;
     }
     
     .login-subtitle {
-      color: #a0aec0;
+      color: #c1c8d0;
     }
   }
   
   .form-item {
-    --background: #4a5568;
-    --border-color: #2d3748;
-    --color: #f7fafc;
+    --background: #3a4252;
+    --border-color: #4a5568;
+    --color: #f0f4f8;
+    
+    ion-icon {
+      color: #a0aec0;
+    }
   }
   
-  .demo-credentials,
-  .role-info {
-    background: rgba(45, 55, 72, 0.8);
+  .custom-input {
+    --color: #f0f4f8;
+    --placeholder-color: #a0aec0;
+  }
+  
+  .demo-credentials, .role-info {
+    background: rgba(30, 35, 45, 0.8);
     border-color: rgba(74, 85, 104, 0.5);
+    
+    .demo-title, .credential-info strong { 
+      color: #f0f4f8; 
+    }
+    
+    .credential-info {
+      color: #c1c8d0;
+      
+      em {
+        color: #8a9cff;
+      }
+    }
+  }
+  
+  .login-type-segment {
+    --background: #2d3748;
+    
+    ion-segment-button {
+      --color: #a0aec0;
+      --color-checked: #ffffff;
+      
+      &.segment-button-checked {
+        --background: $primary-gradient;
+      }
+    }
+  }
+  
+  .error-message {
+    color: #ff6b6b;
+    
+    p {
+      background: rgba(231, 76, 60, 0.2);
+      border-left-color: #ff6b6b;
+    }
+  }
+  
+  .footer-text,
+  .footer-version {
+    color: rgba(255, 255, 255, 0.8);
   }
 }

@@ -5,6 +5,9 @@ import { IonicModule } from '@ionic/angular';
 import { ToastController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { HttpService } from '../services/http.service';
+import { NgZone } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
 
 interface UserData {
   _id: string;
@@ -78,8 +81,11 @@ export class LoginPage {
   constructor(
     private router: Router,
     private toastController: ToastController,
-    private httpService: HttpService
+    private httpService: HttpService,
+    private ngZone: NgZone 
+    
   ) {}
+  
 
   // Alternar visibilidad de contraseña
   togglePasswordVisibility(): void {
@@ -110,6 +116,8 @@ export class LoginPage {
     );
   }
 
+
+  
   // MÉTODO DE LOGIN PRINCIPAL - CORREGIDO PARA MONGODB
   async login(): Promise<void> {
     this.errorMessage = '';
@@ -133,9 +141,9 @@ export class LoginPage {
       console.log('🔐 Enviando datos de login:', { ...loginData, password: '***' });
 
       // Llamar al backend
-      const response = await this.httpService.login(loginData).toPromise() as LoginResponse;
+      const response: any = await this.httpService.login(loginData).toPromise();
 
-      if (response && response.success && response.token && response.usuario) {
+      if (response && response.success && response.token && response.usuario){
         // Login exitoso
         console.log('✅ Login exitoso:', { ...response, token: '***' });
         
@@ -168,14 +176,17 @@ export class LoginPage {
         console.log(`👤 Usuario logueado: ${userData.nombre} | Rol: ${userData.rol} | Admin: ${userData.rol === 'admin'}`);
         
         // Navegar a home
-        console.log('🚀 Navegando a /home con userData:', userData);
-        
-        const success = await this.router.navigate(['/home']);
-        if (success) {
-          console.log('✅ Navegación exitosa');
-        } else {
-          console.error('❌ Error en la navegación');
-        }
+console.log('🚀 Navegando a /home con userData:', userData);
+
+this.ngZone.run(() => {
+  this.router.navigate(['/home']).then(success => {
+    if (success) {
+      console.log('✅ Navegación exitosa');
+    } else {
+      console.error('❌ Error en la navegación');
+    }
+  });
+});
         
       } else {
         throw new Error('Respuesta inválida del servidor');
