@@ -18,19 +18,19 @@ app.use(helmet({
 app.use(morgan('combined'));
 
 app.use(cors({
-  origin: [
-    'http://localhost:8100',
-    'http://localhost:4200',
-    'http://localhost:3000',
-    'http://localhost',
-    'https://localhost',  //Pruebas en Android
-    'ionic://localhost',
-    'capacitor://localhost',
-    'http://192.168.100.139:3001',
-    'http://192.168.100.139:8100',
-    'http://172.29.32.1:8100'
+  origin: '*', //[
+    //'http://localhost:8100',
+    //'http://localhost:4200',
+    //'http://localhost:3000',
+    //'http://localhost',
+    //'https://localhost',  //Pruebas en Android
+    //'ionic://localhost',
+    //'capacitor://localhost',
+    //'http://192.168.100.139:3001',
+    //'http://192.168.100.139:8100',
+   // 'http://172.29.32.1:8100'
     
-  ],
+ // ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: true
