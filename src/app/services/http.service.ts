@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, retry, timeout } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
+
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -19,7 +21,7 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class HttpService {
-  private apiUrl = 'http://localhost:3001/api'; // ✅ Coincide con tu servidor
+  private apiUrl = environment.apiUrl; // ✅ Coincide con tu servidor
   private timeoutDuration = 10000; // 10 segundos
 
   constructor(private http: HttpClient) {
