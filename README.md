@@ -38,6 +38,9 @@ npm install
 # Ejecutar en navegador (modo desarrollo)
 ionic serve
 
+# Ejecutar en navegador en red local (modo desarrollo con diferentes dispositivos en la misma red local)
+ionic serve --external 
+
 # Generar APK para Android
 ionic cap add android
 ionic cap copy
